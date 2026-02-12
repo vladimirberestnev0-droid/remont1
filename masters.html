@@ -54,7 +54,6 @@
             margin: 0 auto;
         }
 
-        /* ───── ШАПКА ───── */
         header {
             background: var(--white);
             border-radius: 24px;
@@ -116,7 +115,6 @@
             color: var(--accent);
         }
 
-        /* ───── ДАШБОРД ───── */
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -124,7 +122,6 @@
             margin-bottom: 30px;
         }
 
-        /* ───── КАРТОЧКА ПРОФИЛЯ ───── */
         .profile-card {
             background: var(--white);
             border-radius: 24px;
@@ -216,12 +213,6 @@
             letter-spacing: 4px;
         }
 
-        .rating-number {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        /* ───── КАРТОЧКА СТАТИСТИКИ ───── */
         .stats-card {
             background: var(--white);
             border-radius: 24px;
@@ -298,7 +289,6 @@
             transition: width 0.3s ease;
         }
 
-        /* ───── КАРТОЧКА ОТКЛИКОВ ───── */
         .responses-card {
             background: var(--white);
             border-radius: 24px;
@@ -329,7 +319,6 @@
             color: var(--accent);
         }
 
-        /* ───── ФИЛЬТРЫ ───── */
         .filter-tabs {
             display: flex;
             gap: 12px;
@@ -359,7 +348,6 @@
             border-color: var(--accent);
         }
 
-        /* ───── КАРТОЧКА ОТКЛИКА ───── */
         .response-item {
             background: var(--bg-light);
             border-radius: 20px;
@@ -476,21 +464,6 @@
             margin-right: 6px;
         }
 
-        .client-rating {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--bg-light);
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 13px;
-            margin-left: 12px;
-        }
-
-        .star {
-            color: #FFD700;
-        }
-
         .action-buttons {
             display: flex;
             gap: 12px;
@@ -541,7 +514,6 @@
             background: #00875A;
         }
 
-        /* ───── УВЕДОМЛЕНИЯ ───── */
         .notification {
             position: fixed;
             top: 20px;
@@ -561,7 +533,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* ───── ПУСТОЙ СОСТОЯНИЕ ───── */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -579,9 +550,8 @@
             color: var(--primary);
         }
 
-        /* ───── АДАПТАЦИЯ ───── */
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         @media (max-width: 1000px) {
@@ -752,8 +722,8 @@
             </div>
         </div>
 
-        <!-- РЕДАКТИРОВАНИЕ ПРОФИЛЯ (МОДАЛКА) -->
-        <div id="editProfileModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+        <!-- РЕДАКТИРОВАНИЕ ПРОФИЛЯ (МОДАЛКА) - ИСПРАВЛЕНО -->
+        <div id="editProfileModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000;">
             <div style="background: white; border-radius: 24px; padding: 32px; max-width: 500px; width: 90%;">
                 <h2 style="margin-bottom: 24px;"><i class="fas fa-edit" style="color: var(--accent);"></i> Редактировать профиль</h2>
                 <div class="form-group">
@@ -784,7 +754,7 @@
     </div>
 
     <script>
-        // ───── ТВОЙ FIREBASE КОНФИГ ─────
+        // ───── FIREBASE КОНФИГ ─────
         const firebaseConfig = {
             apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
             authDomain: "homework-6a562.firebaseapp.com",
@@ -817,7 +787,6 @@
                         currentUserRole = userDoc.data().role;
                         masterData = userDoc.data();
                         
-                        // Показываем кабинет только если роль - мастер
                         if (currentUserRole === 'master') {
                             showMasterCabinet();
                             loadMasterData();
@@ -834,16 +803,28 @@
                     showError('Ошибка загрузки данных. Обновите страницу.');
                 }
             } else {
-                // Не авторизован
                 document.getElementById('authRequired').style.display = 'block';
                 document.getElementById('masterCabinet').classList.add('hidden');
             }
+            
+            // ПРИНУДИТЕЛЬНО ЗАКРЫВАЕМ МОДАЛКУ
+            forceCloseModal();
         });
+
+        // ───── ФУНКЦИЯ ПРИНУДИТЕЛЬНОГО ЗАКРЫТИЯ МОДАЛКИ ─────
+        function forceCloseModal() {
+            const modal = document.getElementById('editProfileModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
+        }
 
         // ───── ПОКАЗЫВАЕМ КАБИНЕТ МАСТЕРА ─────
         function showMasterCabinet() {
             document.getElementById('authRequired').style.display = 'none';
             document.getElementById('masterCabinet').classList.remove('hidden');
+            forceCloseModal();
         }
 
         // ───── ДОСТУП ЗАПРЕЩЁН ─────
@@ -860,6 +841,7 @@
                 </a>
             `;
             document.getElementById('masterCabinet').classList.add('hidden');
+            forceCloseModal();
         }
 
         // ───── ОШИБКА ─────
@@ -874,6 +856,7 @@
                 </button>
             `;
             document.getElementById('masterCabinet').classList.add('hidden');
+            forceCloseModal();
         }
 
         // ───── ЗАГРУЗКА ДАННЫХ МАСТЕРА ─────
@@ -884,23 +867,19 @@
             document.getElementById('masterEmail').innerText = masterData.email || '';
             document.getElementById('masterPhone').innerText = masterData.phone || 'Телефон не указан';
             
-            // Категории
             const categories = masterData.categories || 'Сантехника, Электрика';
             document.getElementById('masterCategories').innerHTML = categories;
             
-            // Дата регистрации
             if (masterData.createdAt) {
                 const date = masterData.createdAt.toDate();
                 document.getElementById('masterSince').innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
             }
             
-            // Рейтинг
             const rating = masterData.rating || 0;
             const reviews = masterData.reviews || 0;
             document.getElementById('masterRating').innerHTML = rating.toFixed(1);
             document.getElementById('masterReviews').innerHTML = `${reviews} ${getReviewWord(reviews)}`;
             
-            // Звёзды
             updateRatingStars(rating);
         }
 
@@ -938,7 +917,6 @@
             responsesList.innerHTML = '<div style="text-align: center; padding: 40px;">Загрузка откликов...</div>';
             
             try {
-                // Получаем ВСЕ заявки с откликами этого мастера
                 const ordersSnapshot = await db.collection('orders')
                     .orderBy('createdAt', 'desc')
                     .get();
@@ -962,11 +940,8 @@
                 });
 
                 allResponses = myResponses;
-
-                // Обновляем статистику
                 updateStats(myResponses);
 
-                // Фильтруем
                 let filteredResponses = myResponses;
                 if (filter === 'pending') {
                     filteredResponses = myResponses.filter(r => r.status === 'open');
@@ -976,7 +951,6 @@
                     filteredResponses = myResponses.filter(r => r.status === 'completed');
                 }
 
-                // Отображаем
                 if (filteredResponses.length === 0) {
                     responsesList.innerHTML = `
                         <div class="empty-state">
@@ -991,7 +965,6 @@
                     return;
                 }
 
-                // Рендерим отклики
                 responsesList.innerHTML = '';
                 filteredResponses.forEach(item => {
                     responsesList.appendChild(createResponseCard(item));
@@ -1011,12 +984,10 @@
             const order = item.orderData;
             const response = item.response;
             
-            // Дата отклика
             const responseDate = response.createdAt ? 
                 response.createdAt.toDate().toLocaleDateString('ru-RU') : 
                 'сегодня';
             
-            // Статус
             let statusClass = '';
             let statusText = '';
             if (item.status === 'open') {
@@ -1030,7 +1001,6 @@
                 statusText = '✅ Заказ выполнен';
             }
             
-            // Фото
             let photosHtml = '';
             if (order.photos && order.photos.length > 0) {
                 photosHtml = '<div class="order-photos">';
@@ -1043,7 +1013,6 @@
                 photosHtml += '</div>';
             }
             
-            // Отзыв клиента (если есть)
             let reviewHtml = '';
             if (order.reviews && order.reviews.length > 0) {
                 const review = order.reviews.find(r => r.masterId === currentUser.uid);
@@ -1161,7 +1130,6 @@
 
         // ───── УВЕДОМЛЕНИЯ ─────
         function startNotificationListener() {
-            // Проверяем новые заказы каждые 30 секунд
             const lastCheck = localStorage.getItem('lastNotificationCheck') || 0;
             localStorage.setItem('lastNotificationCheck', Date.now());
             
@@ -1211,11 +1179,14 @@
             document.getElementById('editName').value = masterData.name || '';
             document.getElementById('editPhone').value = masterData.phone || '';
             document.getElementById('editCategories').value = masterData.categories || 'Сантехника, Электрика';
-            document.getElementById('editProfileModal').classList.remove('hidden');
+            
+            const modal = document.getElementById('editProfileModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
         });
 
         document.getElementById('cancelEditBtn').addEventListener('click', () => {
-            document.getElementById('editProfileModal').classList.add('hidden');
+            forceCloseModal();
         });
 
         document.getElementById('saveProfileBtn').addEventListener('click', async () => {
@@ -1232,7 +1203,7 @@
                 
                 masterData = { ...masterData, name, phone, categories };
                 loadMasterData();
-                document.getElementById('editProfileModal').classList.add('hidden');
+                forceCloseModal();
                 showNotification('✅ Профиль обновлён');
             } catch (error) {
                 console.error('Ошибка обновления:', error);
@@ -1262,6 +1233,15 @@
         window.showPaymentModal = function(orderId, masterId, amount) {
             alert(`💳 Демо-режим: Предложение оплаты на сумму ${amount} ₽ отправлено клиенту.`);
         };
+
+        // ───── ПРИНУДИТЕЛЬНОЕ ЗАКРЫТИЕ ПРИ ЗАГРУЗКЕ ─────
+        window.addEventListener('load', function() {
+            forceCloseModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            forceCloseModal();
+        });
     </script>
 </body>
 </html>
