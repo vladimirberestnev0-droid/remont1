@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     
     <style>
         :root {
@@ -22,47 +23,103 @@
             --white: #FFFFFF;
             --border: #E2E8F0;
             --success: #00A86B;
+            --warning: #FFB020;
         }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: var(--bg-light); padding: 20px; }
-        .container { max-width: 1280px; margin: 0 auto; }
-        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding: 20px;
+            animation: fadeSlide 0.6s ease-out;
+        }
+
+        @keyframes fadeSlide {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
         header {
-            background: white;
+            background: var(--white);
             border-radius: 24px;
             padding: 24px 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
             margin-bottom: 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
-        
-        .logo { display: flex; align-items: center; gap: 12px; }
-        .logo i { font-size: 32px; color: var(--accent); }
-        .logo span { font-size: 28px; font-weight: 700; color: var(--primary); }
-        
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 32px;
+            color: var(--accent);
+        }
+
+        .logo span {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .slogan {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-size: 14px;
+            color: var(--text-soft);
+            margin-top: 4px;
+            margin-left: 44px;
+        }
+
         nav a {
             margin-left: 24px;
             text-decoration: none;
             color: var(--text-soft);
             font-weight: 500;
+            transition: 0.2s;
         }
-        nav a:hover { color: var(--accent); }
-        
+
+        nav a:hover {
+            color: var(--accent);
+        }
+
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 3fr;
             gap: 30px;
         }
-        
-        .profile-card, .orders-card {
-            background: white;
+
+        .profile-card {
+            background: var(--white);
             border-radius: 24px;
             padding: 32px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.02);
+            height: fit-content;
         }
-        
+
         .avatar {
             width: 100px;
             height: 100px;
@@ -74,132 +131,277 @@
             margin: 0 auto 20px;
             border: 3px solid var(--accent);
         }
-        .avatar i { font-size: 48px; color: var(--accent); }
-        .profile-name { font-size: 22px; font-weight: 700; color: var(--primary); text-align: center; }
-        .profile-role { text-align: center; color: var(--accent); background: var(--bg-light); padding: 8px; border-radius: 40px; margin: 10px 0; }
-        
-        .btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+
+        .avatar i {
+            font-size: 48px;
+            color: var(--accent);
         }
-        .btn:hover { background: #D45C2F; transform: translateY(-2px); }
-        .btn-outline {
-            background: transparent;
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: 700;
             color: var(--primary);
-            border: 1px solid var(--border);
+            text-align: center;
+            margin-bottom: 8px;
         }
-        
+
+        .profile-role {
+            text-align: center;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 24px;
+            background: var(--bg-light);
+            padding: 8px;
+            border-radius: 40px;
+        }
+
+        .profile-info {
+            margin-top: 24px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-row i {
+            width: 20px;
+            color: var(--accent);
+        }
+
+        .orders-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.02);
+        }
+
         .filter-tabs {
             display: flex;
             gap: 12px;
             margin-bottom: 24px;
             flex-wrap: wrap;
         }
+
         .filter-tab {
             padding: 8px 20px;
             border-radius: 40px;
             background: var(--bg-light);
             border: 1px solid var(--border);
             cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
         }
+
         .filter-tab.active {
             background: var(--accent);
             color: white;
             border-color: var(--accent);
         }
-        
+
         .order-item {
             background: var(--bg-light);
             border-radius: 20px;
             padding: 24px;
             margin-bottom: 20px;
             border-left: 6px solid var(--accent);
+            transition: 0.2s;
         }
-        
+
+        .order-item:hover {
+            background: var(--white);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.02);
+        }
+
         .order-header {
             display: flex;
             justify-content: space-between;
             margin-bottom: 12px;
         }
-        .order-title { font-weight: 700; color: var(--primary); font-size: 18px; }
-        .order-price { color: var(--accent); font-weight: 700; }
-        
+
+        .order-title {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .order-price {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
         .order-status {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 40px;
             font-size: 12px;
+            font-weight: 600;
             margin-left: 12px;
         }
+
         .status-open { background: #FFE8E0; color: var(--accent); }
         .status-progress { background: #E3F2FD; color: #0984e3; }
         .status-completed { background: #E3F2E9; color: var(--success); }
-        
+
+        .order-desc {
+            color: var(--text-soft);
+            margin-bottom: 16px;
+        }
+
+        .order-photos {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .order-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid var(--white);
+        }
+
+        .order-category {
+            display: inline-block;
+            background: white;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            color: var(--text-soft);
+            border: 1px solid var(--border);
+        }
+
+        .responses {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
         .response-item {
             background: white;
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
         }
-        
+
+        .master-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-light);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            margin-left: 12px;
+        }
+
+        .star {
+            color: #FFD700;
+            font-size: 14px;
+        }
+
+        .rating-select {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
         .rating-star {
             font-size: 24px;
             color: var(--border);
             cursor: pointer;
+            transition: 0.2s;
         }
-        .rating-star.active { color: #FFD700; }
-        
-        .hidden { display: none !important; }
-        
-        #reviewModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
+
+        .rating-star:hover,
+        .rating-star.active {
+            color: #FFD700;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            z-index: 2000;
+            gap: 8px;
         }
-        .modal-content {
-            background: white;
-            border-radius: 24px;
-            padding: 32px;
-            max-width: 400px;
-            width: 90%;
+
+        .btn:hover {
+            background: #D45C2F;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-soft);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--border);
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+            header { flex-direction: column; text-align: center; }
+            nav a { margin: 0 12px; }
+            .slogan { margin-left: 0; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="logo">
-                <i class="fas fa-house"></i>
-                <span>ВоркХом</span>
+            <div class="brand">
+                <div class="logo">
+                    <i class="fas fa-house"></i>
+                    <span>ВоркХом</span>
+                </div>
+                <div class="slogan">С нами проще. Вы хотите — мы делаем.</div>
             </div>
             <nav>
                 <a href="index.html">Главная</a>
                 <a href="client.html" style="color: var(--accent);">Мои заказы</a>
-                <a href="index.html">➕ Создать заявку</a>
+                <a href="index.html#form">➕ Создать заявку</a>
                 <a href="#" id="logoutLink">Выйти</a>
             </nav>
         </header>
 
-        <div id="authRequired" style="text-align: center; padding: 60px; background: white; border-radius: 24px;">
-            <i class="fas fa-user-circle" style="font-size: 64px; color: var(--accent);"></i>
-            <h2 style="margin: 20px 0;">Вход в кабинет клиента</h2>
+        <div id="authRequired" style="text-align: center; padding: 60px; background: var(--white); border-radius: 24px; margin-bottom: 40px;">
+            <i class="fas fa-user-circle" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
+            <h2 style="margin-bottom: 16px;">Вход в кабинет клиента</h2>
             <p style="color: var(--text-soft); margin-bottom: 24px;">Пожалуйста, войдите, чтобы увидеть ваши заказы</p>
-            <a href="index.html" class="btn">Перейти на главную и войти</a>
+            <a href="index.html" class="btn" style="width: auto; padding: 14px 40px;">Перейти на главную и войти</a>
         </div>
 
         <div id="clientCabinet" class="hidden">
@@ -210,15 +412,32 @@
                     </div>
                     <div class="profile-name" id="clientName">Загрузка...</div>
                     <div class="profile-role">👤 Клиент</div>
-                    <div id="clientEmail" style="color: var(--text-soft); text-align: center; margin-bottom: 20px;"></div>
-                    <a href="index.html" class="btn" style="width: 100%;">
-                        <i class="fas fa-plus-circle"></i> Новая заявка
-                    </a>
+                    
+                    <div class="profile-info">
+                        <div class="info-row">
+                            <i class="fas fa-envelope"></i>
+                            <span id="clientEmail">email@example.com</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-phone"></i>
+                            <span id="clientPhone">+7 (999) 123-45-67</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-calendar"></i>
+                            <span id="clientSince">На платформе с 2025</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px;">
+                        <a href="index.html#form" class="btn" style="width: 100%;">
+                            <i class="fas fa-plus-circle"></i> Новая заявка
+                        </a>
+                    </div>
                 </div>
 
                 <div class="orders-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h2>📋 Мои заказы</h2>
+                        <h2 style="margin-bottom: 0;">📋 Мои заказы</h2>
                         <div class="filter-tabs">
                             <button class="filter-tab active" data-filter="all">Все</button>
                             <button class="filter-tab" data-filter="open">Активные</button>
@@ -226,27 +445,28 @@
                             <button class="filter-tab" data-filter="completed">Выполнены</button>
                         </div>
                     </div>
+                    
                     <div id="ordersList"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="reviewModal" class="hidden">
-        <div class="modal-content">
+    <div id="reviewModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+        <div style="background: white; border-radius: 24px; padding: 32px; max-width: 400px; width: 90%;">
             <h2 style="margin-bottom: 20px;">⭐ Оцените мастера</h2>
             <div id="reviewMasterInfo" style="margin-bottom: 20px;"></div>
-            <div style="display: flex; gap: 8px; margin-bottom: 20px; justify-content: center;">
+            <div class="rating-select" id="ratingStars">
                 <span class="rating-star" data-rating="1">★</span>
                 <span class="rating-star" data-rating="2">★</span>
                 <span class="rating-star" data-rating="3">★</span>
                 <span class="rating-star" data-rating="4">★</span>
                 <span class="rating-star" data-rating="5">★</span>
             </div>
-            <textarea id="reviewText" placeholder="Напишите отзыв..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; min-height: 100px;"></textarea>
+            <textarea id="reviewText" placeholder="Напишите отзыв..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; margin: 20px 0; min-height: 100px;"></textarea>
             <div style="display: flex; gap: 12px;">
-                <button id="submitReview" class="btn" style="flex: 1;">Отправить</button>
-                <button id="cancelReview" class="btn-outline" style="flex: 1;">Отмена</button>
+                <button class="btn" id="submitReview" style="flex: 1;">Отправить</button>
+                <button class="btn-outline" id="cancelReview" style="flex: 1;">Отмена</button>
             </div>
         </div>
     </div>
@@ -266,52 +486,76 @@
         const auth = firebase.auth();
 
         let currentUser = null;
+        let clientData = null;
         let currentRating = 0;
         let currentOrderId = null;
         let currentMasterId = null;
 
-        // СЛУШАЕМ АВТОРИЗАЦИЮ
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
             if (user) {
                 const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists && userDoc.data().role === 'client') {
-                    document.getElementById('authRequired').classList.add('hidden');
-                    document.getElementById('clientCabinet').classList.remove('hidden');
+                if (userDoc.exists) {
+                    clientData = userDoc.data();
                     
-                    const userData = userDoc.data();
-                    document.getElementById('clientName').innerText = userData.name || 'Клиент';
-                    document.getElementById('clientEmail').innerText = userData.email || '';
-                    
-                    loadClientOrders('all');
+                    if (clientData.role === 'client') {
+                        showClientCabinet();
+                        loadClientData();
+                        loadClientOrders();
+                    } else {
+                        document.getElementById('authRequired').innerHTML = `
+                            <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
+                            <h2 style="margin-bottom: 16px;">Это кабинет клиента</h2>
+                            <p style="color: var(--text-soft); margin-bottom: 24px;">Вы вошли как мастер. Для клиентов есть отдельный кабинет.</p>
+                            <a href="masters.html" class="btn" style="width: auto; padding: 14px 40px;">Перейти в кабинет мастера</a>
+                        `;
+                    }
                 }
             } else {
-                document.getElementById('authRequired').classList.remove('hidden');
+                document.getElementById('authRequired').style.display = 'block';
                 document.getElementById('clientCabinet').classList.add('hidden');
             }
         });
 
-        // ЗАГРУЗКА ЗАКАЗОВ
-        async function loadClientOrders(filter) {
+        function showClientCabinet() {
+            document.getElementById('authRequired').style.display = 'none';
+            document.getElementById('clientCabinet').classList.remove('hidden');
+        }
+
+        async function loadClientData() {
+            if (!clientData) return;
+            
+            document.getElementById('clientName').innerText = clientData.name || 'Клиент';
+            document.getElementById('clientEmail').innerText = clientData.email || '';
+            document.getElementById('clientPhone').innerText = clientData.phone || 'Телефон не указан';
+            
+            if (clientData.createdAt) {
+                const date = clientData.createdAt.toDate();
+                document.getElementById('clientSince').innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
+            }
+        }
+
+        async function loadClientOrders(filter = 'all') {
             if (!currentUser) return;
             
             const ordersList = document.getElementById('ordersList');
             ordersList.innerHTML = '<div style="text-align: center; padding: 40px;">Загрузка заказов...</div>';
             
             try {
-                const snapshot = await db.collection('orders')
+                let query = db.collection('orders')
                     .where('clientId', '==', currentUser.uid)
-                    .orderBy('createdAt', 'desc')
-                    .get();
+                    .orderBy('createdAt', 'desc');
+                
+                const snapshot = await query.get();
 
                 if (snapshot.empty) {
                     ordersList.innerHTML = `
-                        <div style="text-align: center; padding: 60px; color: var(--text-soft);">
-                            <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px;"></i>
-                            <h3>У вас пока нет заказов</h3>
-                            <p style="margin: 20px 0;">Создайте первую заявку, и мастера начнут откликаться</p>
-                            <a href="index.html" class="btn">Создать заявку</a>
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3 style="margin-bottom: 8px;">У вас пока нет заказов</h3>
+                            <p style="color: var(--text-soft); margin-bottom: 24px;">Создайте первую заявку, и мастера начнут откликаться</p>
+                            <a href="index.html#form" class="btn">Создать заявку</a>
                         </div>
                     `;
                     return;
@@ -332,19 +576,17 @@
                 });
                 
             } catch (error) {
-                console.error('Ошибка:', error);
+                console.error('Ошибка загрузки заказов:', error);
                 ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">Ошибка загрузки. Обновите страницу.</div>';
             }
         }
 
-        // СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА
         function createOrderCard(order) {
             const div = document.createElement('div');
             div.className = 'order-item';
             
             let statusClass = '';
             let statusText = '';
-            
             if (order.status === 'open') {
                 statusClass = 'status-open';
                 statusText = '🔵 Активна';
@@ -356,56 +598,53 @@
                 statusText = '✅ Выполнена';
             }
             
+            let photosHtml = '';
+            if (order.photos && order.photos.length > 0) {
+                photosHtml = '<div class="order-photos">';
+                order.photos.forEach(url => {
+                    photosHtml += `<img src="${url}" class="order-photo" onclick="window.open('${url}')">`;
+                });
+                photosHtml += '</div>';
+            }
+            
             let responsesHtml = '';
             if (order.responses && order.responses.length > 0) {
-                responsesHtml = '<div style="margin-top: 20px;"><h4 style="margin-bottom: 16px;">📩 Отклики мастеров</h4>';
+                responsesHtml = '<div class="responses"><h4 style="margin-bottom: 16px;">📩 Отклики мастеров</h4>';
                 
                 order.responses.forEach(resp => {
-                    const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
-                    const isSelected = order.selectedMasterId === resp.masterId;
+                    const hasReview = order.reviews && Array.isArray(order.reviews) && 
+                        order.reviews.some(r => r && r.masterId === resp.masterId);
                     
                     responsesHtml += `
-                        <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div class="response-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <span style="font-weight: 700; font-size: 16px;">${resp.masterName || 'Мастер'}</span>
-                                    <span style="background: var(--bg-light); padding: 4px 12px; border-radius: 40px; font-size: 13px; margin-left: 12px;">
-                                        <i class="fas fa-star" style="color: #FFD700;"></i> ${(resp.masterRating || 0).toFixed(1)} (${resp.masterReviews || 0})
+                                    <span style="font-weight: 700;">${resp.masterName || 'Мастер'}</span>
+                                    <span class="master-rating">
+                                        <i class="fas fa-star star"></i> ${(resp.masterRating || 0).toFixed(1)}
+                                        (${resp.masterReviews || 0})
                                     </span>
                                 </div>
-                                <span style="color: var(--accent); font-weight: 700; font-size: 18px;">${resp.price || 0} ₽</span>
+                                <span style="color: var(--accent); font-weight: 700;">${resp.price || 0} ₽</span>
                             </div>
-                            
-                            <p style="color: var(--text-soft); margin-bottom: 16px;">${resp.comment || 'Нет комментария'}</p>
-                            
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <!-- КНОПКА ЧАТА - ВСЕГДА ДОСТУПНА -->
-                                <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn-outline" style="padding: 8px 20px;">
-                                    <i class="fas fa-comment"></i> Чат с мастером
+                            <p style="margin-top: 12px; color: var(--text-soft);">${resp.comment || ''}</p>
+                            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn-outline" style="padding: 8px 16px;">
+                                    <i class="fas fa-comment"></i> Чат
                                 </button>
-                                
-                                ${order.status === 'open' && !isSelected ? `
-                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})" class="btn" style="padding: 8px 20px;">
-                                        <i class="fas fa-check"></i> Выбрать мастера
-                                    </button>
-                                ` : ''}
-                                
-                                ${isSelected && order.status === 'in_progress' ? `
-                                    <span style="background: #E3F2E9; color: var(--success); padding: 8px 20px; border-radius: 40px; display: inline-flex; align-items: center; gap: 8px;">
-                                        <i class="fas fa-check-circle"></i> Мастер выбран
-                                    </span>
-                                ` : ''}
-                                
                                 ${order.status === 'completed' && !hasReview ? `
-                                    <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName || 'Мастер'}')" class="btn-outline" style="padding: 8px 20px;">
+                                    <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName || 'Мастер'}')" class="btn-outline" style="padding: 8px 16px;">
                                         <i class="fas fa-star"></i> Оценить
                                     </button>
-                                ` : ''}
-                                
-                                ${order.status === 'completed' && hasReview ? `
-                                    <span style="color: var(--success); padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px;">
+                                ` : order.status === 'completed' && hasReview ? `
+                                    <span style="color: var(--success); padding: 8px 16px;">
                                         <i class="fas fa-check-circle"></i> Отзыв оставлен
                                     </span>
+                                ` : ''}
+                                ${order.status === 'open' ? `
+                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price || 0})" class="btn" style="padding: 8px 16px;">
+                                        <i class="fas fa-check"></i> Выбрать
+                                    </button>
                                 ` : ''}
                             </div>
                         </div>
@@ -414,35 +653,29 @@
                 responsesHtml += '</div>';
             }
             
-            div.innerHTML = `
+            let html = `
                 <div class="order-header">
                     <div>
                         <span class="order-title">${order.title || 'Заказ'}</span>
                         <span class="order-status ${statusClass}">${statusText}</span>
                     </div>
-                    <span class="order-price">${order.price || 0} ₽</span>
+                    <div class="order-price">${order.price || 0} ₽</div>
                 </div>
-                
-                <div style="color: var(--text-soft); margin-bottom: 16px;">
-                    ${order.description || 'Нет описания'}
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="background: white; padding: 6px 18px; border-radius: 40px; font-size: 13px; border: 1px solid var(--border);">
-                        ${order.category || 'Без категории'}
-                    </span>
+                <div class="order-desc">${order.description || 'Нет описания'}</div>
+                ${photosHtml}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                    <span class="order-category">${order.category || 'Без категории'}</span>
                     <span style="color: var(--text-soft); font-size: 13px;">
                         <i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}
                     </span>
                 </div>
-                
                 ${responsesHtml}
             `;
             
+            div.innerHTML = html;
             return div;
         }
 
-        // ВЫБРАТЬ МАСТЕРА
         window.selectMaster = async function(orderId, masterId, price) {
             if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
             
@@ -453,81 +686,91 @@
                     selectedPrice: price
                 });
                 
-                alert('✅ Мастер выбран! Теперь вы можете общаться в чате.');
+                showNotification('✅ Мастер выбран! Теперь вы можете обсудить детали в чате.');
                 loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
             } catch (error) {
                 console.error('Ошибка:', error);
-                alert('❌ Ошибка при выборе мастера');
+                alert('Ошибка при выборе мастера');
             }
         };
 
-        // ОТКРЫТЬ ЧАТ - ВАЖНО!
         window.openChat = function(orderId, masterId) {
             window.location.href = `chat.html?orderId=${orderId}&masterId=${masterId}`;
         };
 
-        // ОТКРЫТЬ ОТЗЫВ
         window.openReview = function(orderId, masterId, masterName) {
             currentOrderId = orderId;
             currentMasterId = masterId;
-            document.getElementById('reviewMasterInfo').innerHTML = `<p style="font-weight: 700;">Мастер: ${masterName}</p>`;
+            document.getElementById('reviewMasterInfo').innerHTML = `
+                <p style="font-weight: 700; margin-bottom: 8px;">Мастер: ${masterName}</p>
+            `;
             document.getElementById('reviewModal').classList.remove('hidden');
         };
 
-        // ЗВЁЗДЫ
         document.querySelectorAll('.rating-star').forEach(star => {
             star.addEventListener('click', function() {
-                currentRating = parseInt(this.dataset.rating);
-                document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
-                for (let i = 0; i < currentRating; i++) {
+                const rating = parseInt(this.dataset.rating);
+                currentRating = rating;
+                
+                document.querySelectorAll('.rating-star').forEach(s => {
+                    s.classList.remove('active');
+                });
+                
+                for (let i = 0; i < rating; i++) {
                     document.querySelectorAll('.rating-star')[i].classList.add('active');
                 }
             });
         });
 
-        // ОТПРАВИТЬ ОТЗЫВ
         document.getElementById('submitReview').addEventListener('click', async () => {
-            if (!currentRating) {
-                alert('Поставьте оценку!');
+            if (currentRating === 0) {
+                alert('Пожалуйста, поставьте оценку');
                 return;
             }
+            
+            const reviewText = document.getElementById('reviewText').value;
             
             try {
                 const review = {
                     masterId: currentMasterId,
                     rating: currentRating,
-                    text: document.getElementById('reviewText').value || '',
+                    text: reviewText,
                     createdAt: new Date().toISOString()
                 };
-
-                await db.collection('orders').doc(currentOrderId).update({
+                
+                const orderRef = db.collection('orders').doc(currentOrderId);
+                await orderRef.update({
                     reviews: firebase.firestore.FieldValue.arrayUnion(review)
                 });
-
-                const masterDoc = await db.collection('users').doc(currentMasterId).get();
-                const masterData = masterDoc.data();
-                const newRating = ((masterData.rating || 0) * (masterData.reviews || 0) + currentRating) / ((masterData.reviews || 0) + 1);
                 
-                await db.collection('users').doc(currentMasterId).update({
+                const masterRef = db.collection('users').doc(currentMasterId);
+                const masterDoc = await masterRef.get();
+                const masterData = masterDoc.data();
+                
+                const currentRating_sum = masterData.rating || 0;
+                const currentReviews_count = masterData.reviews || 0;
+                
+                const newRating = ((currentRating_sum * currentReviews_count) + currentRating) / (currentReviews_count + 1);
+                
+                await masterRef.update({
                     rating: newRating,
-                    reviews: (masterData.reviews || 0) + 1
+                    reviews: currentReviews_count + 1
                 });
-
+                
                 document.getElementById('reviewModal').classList.add('hidden');
                 document.getElementById('reviewText').value = '';
                 currentRating = 0;
                 document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
                 
-                alert('✅ Отзыв отправлен!');
-                loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
+                alert('✅ Спасибо за отзыв!');
+                await loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
                 
             } catch (error) {
-                console.error('Ошибка:', error);
-                alert('❌ Ошибка: ' + error.message);
+                console.error('Ошибка при отправке отзыва:', error);
+                alert('❌ Ошибка при отправке отзыва: ' + error.message);
             }
         });
 
-        // ОТМЕНА ОТЗЫВА
         document.getElementById('cancelReview').addEventListener('click', () => {
             document.getElementById('reviewModal').classList.add('hidden');
             document.getElementById('reviewText').value = '';
@@ -535,16 +778,36 @@
             document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
         });
 
-        // ФИЛЬТРЫ
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 12px;
+                z-index: 3000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-                loadClientOrders(this.dataset.filter);
+                const filter = this.dataset.filter;
+                loadClientOrders(filter);
             });
         });
 
-        // ВЫХОД
         document.getElementById('logoutLink').addEventListener('click', (e) => {
             e.preventDefault();
             auth.signOut().then(() => {

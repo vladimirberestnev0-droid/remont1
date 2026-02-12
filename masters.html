@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Кабинет мастера</title>
     
-    <!-- Google Fonts & Font Awesome -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia:ital@1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     
     <style>
-        /* ───── ПОЛНЫЙ БРЕНД ВОРКХОМ ───── */
         :root {
             --primary: #1E2B3C;
             --accent: #E67A4B;
@@ -570,7 +567,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- ШАПКА -->
         <header>
             <div class="brand">
                 <div class="logo">
@@ -586,7 +582,6 @@
             </nav>
         </header>
 
-        <!-- БЛОК АВТОРИЗАЦИИ -->
         <div id="authRequired" style="text-align: center; padding: 60px; background: var(--white); border-radius: 24px; margin-bottom: 40px;">
             <i class="fas fa-user-tie" style="font-size: 72px; color: var(--accent); margin-bottom: 24px;"></i>
             <h2 style="margin-bottom: 16px;">Вход в кабинет мастера</h2>
@@ -598,10 +593,8 @@
             </a>
         </div>
 
-        <!-- ОСНОВНОЙ КАБИНЕТ МАСТЕРА -->
         <div id="masterCabinet" class="hidden">
             <div class="dashboard">
-                <!-- КАРТОЧКА ПРОФИЛЯ -->
                 <div class="profile-card">
                     <div class="avatar">
                         <i class="fas fa-user-tie"></i>
@@ -626,7 +619,7 @@
                         </div>
                         <div class="info-row">
                             <i class="fas fa-tag"></i>
-                            <span id="masterCategories">Сантехника, Электрика</span>
+                            <span id="masterCategories">Ремонт и отделка</span>
                         </div>
                     </div>
 
@@ -653,7 +646,6 @@
                     </div>
                 </div>
 
-                <!-- КАРТОЧКА СТАТИСТИКИ -->
                 <div class="stats-card">
                     <h2><i class="fas fa-chart-line"></i> Моя статистика</h2>
                     <div class="stats-grid">
@@ -694,7 +686,6 @@
                     </div>
                 </div>
 
-                <!-- КАРТОЧКА ОТКЛИКОВ -->
                 <div class="responses-card">
                     <div class="responses-header">
                         <h2>
@@ -722,7 +713,6 @@
             </div>
         </div>
 
-        <!-- РЕДАКТИРОВАНИЕ ПРОФИЛЯ (МОДАЛКА) - ИСПРАВЛЕНО -->
         <div id="editProfileModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000;">
             <div style="background: white; border-radius: 24px; padding: 32px; max-width: 500px; width: 90%;">
                 <h2 style="margin-bottom: 24px;"><i class="fas fa-edit" style="color: var(--accent);"></i> Редактировать профиль</h2>
@@ -754,7 +744,6 @@
     </div>
 
     <script>
-        // ───── FIREBASE КОНФИГ ─────
         const firebaseConfig = {
             apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
             authDomain: "homework-6a562.firebaseapp.com",
@@ -764,19 +753,23 @@
             appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4"
         };
 
-        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        const storage = firebase.storage();
 
-        // Глобальные переменные
         let currentUser = null;
         let currentUserRole = null;
         let masterData = null;
         let allResponses = [];
 
-        // ───── СЛУШАЕМ СОСТОЯНИЕ АВТОРИЗАЦИИ ─────
+        function forceCloseModal() {
+            const modal = document.getElementById('editProfileModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
+        }
+
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
@@ -807,27 +800,15 @@
                 document.getElementById('masterCabinet').classList.add('hidden');
             }
             
-            // ПРИНУДИТЕЛЬНО ЗАКРЫВАЕМ МОДАЛКУ
             forceCloseModal();
         });
 
-        // ───── ФУНКЦИЯ ПРИНУДИТЕЛЬНОГО ЗАКРЫТИЯ МОДАЛКИ ─────
-        function forceCloseModal() {
-            const modal = document.getElementById('editProfileModal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-            }
-        }
-
-        // ───── ПОКАЗЫВАЕМ КАБИНЕТ МАСТЕРА ─────
         function showMasterCabinet() {
             document.getElementById('authRequired').style.display = 'none';
             document.getElementById('masterCabinet').classList.remove('hidden');
             forceCloseModal();
         }
 
-        // ───── ДОСТУП ЗАПРЕЩЁН ─────
         function showAccessDenied() {
             document.getElementById('authRequired').style.display = 'block';
             document.getElementById('authRequired').innerHTML = `
@@ -844,7 +825,6 @@
             forceCloseModal();
         }
 
-        // ───── ОШИБКА ─────
         function showError(message) {
             document.getElementById('authRequired').style.display = 'block';
             document.getElementById('authRequired').innerHTML = `
@@ -859,7 +839,6 @@
             forceCloseModal();
         }
 
-        // ───── ЗАГРУЗКА ДАННЫХ МАСТЕРА ─────
         function loadMasterData() {
             if (!masterData) return;
             
@@ -867,7 +846,7 @@
             document.getElementById('masterEmail').innerText = masterData.email || '';
             document.getElementById('masterPhone').innerText = masterData.phone || 'Телефон не указан';
             
-            const categories = masterData.categories || 'Сантехника, Электрика';
+            const categories = masterData.categories || 'Ремонт и отделка';
             document.getElementById('masterCategories').innerHTML = categories;
             
             if (masterData.createdAt) {
@@ -883,14 +862,12 @@
             updateRatingStars(rating);
         }
 
-        // ───── СКЛОНЕНИЕ СЛОВА "ОТЗЫВ" ─────
         function getReviewWord(count) {
             if (count % 10 === 1 && count % 100 !== 11) return 'отзыв';
             if ([2,3,4].includes(count % 10) && ![12,13,14].includes(count % 100)) return 'отзыва';
             return 'отзывов';
         }
 
-        // ───── ОБНОВЛЕНИЕ ЗВЁЗД ─────
         function updateRatingStars(rating) {
             const starsElement = document.getElementById('ratingStars');
             const fullStars = Math.floor(rating);
@@ -909,7 +886,6 @@
             starsElement.innerHTML = stars;
         }
 
-        // ───── ЗАГРУЗКА ОТКЛИКОВ МАСТЕРА ─────
         async function loadMasterResponses(filter = 'all') {
             if (!currentUser) return;
             
@@ -976,7 +952,6 @@
             }
         }
 
-        // ───── СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА ─────
         function createResponseCard(item) {
             const div = document.createElement('div');
             div.className = 'response-item';
@@ -1091,7 +1066,6 @@
             return div;
         }
 
-        // ───── ОБНОВЛЕНИЕ СТАТИСТИКИ ─────
         function updateStats(responses) {
             const total = responses.length;
             const accepted = responses.filter(r => r.status === 'in_progress' || r.status === 'completed').length;
@@ -1106,12 +1080,10 @@
             document.getElementById('conversionBar').style.width = `${conversion}%`;
         }
 
-        // ───── ОТКРЫТЬ ЧАТ ─────
         window.openChat = function(orderId, clientId) {
             window.location.href = `chat.html?orderId=${orderId}&masterId=${currentUser.uid}`;
         };
 
-        // ───── ЗАВЕРШИТЬ ЗАКАЗ ─────
         window.completeOrder = async function(orderId) {
             if (!confirm('Подтвердите, что заказ выполнен. Клиент сможет оставить отзыв.')) return;
             
@@ -1128,11 +1100,7 @@
             }
         };
 
-        // ───── УВЕДОМЛЕНИЯ ─────
         function startNotificationListener() {
-            const lastCheck = localStorage.getItem('lastNotificationCheck') || 0;
-            localStorage.setItem('lastNotificationCheck', Date.now());
-            
             setInterval(async () => {
                 try {
                     const snapshot = await db.collection('orders')
@@ -1157,7 +1125,6 @@
             }, 30000);
         }
 
-        // ───── ПОКАЗАТЬ УВЕДОМЛЕНИЕ ─────
         function showNotification(message) {
             const notification = document.createElement('div');
             notification.className = 'notification';
@@ -1174,20 +1141,17 @@
             }, 5000);
         }
 
-        // ───── РЕДАКТИРОВАНИЕ ПРОФИЛЯ ─────
         document.getElementById('editProfileBtn').addEventListener('click', () => {
             document.getElementById('editName').value = masterData.name || '';
             document.getElementById('editPhone').value = masterData.phone || '';
-            document.getElementById('editCategories').value = masterData.categories || 'Сантехника, Электрика';
+            document.getElementById('editCategories').value = masterData.categories || 'Ремонт и отделка';
             
             const modal = document.getElementById('editProfileModal');
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
         });
 
-        document.getElementById('cancelEditBtn').addEventListener('click', () => {
-            forceCloseModal();
-        });
+        document.getElementById('cancelEditBtn').addEventListener('click', forceCloseModal);
 
         document.getElementById('saveProfileBtn').addEventListener('click', async () => {
             const name = document.getElementById('editName').value;
@@ -1211,7 +1175,6 @@
             }
         });
 
-        // ───── ОБРАБОТЧИКИ ФИЛЬТРОВ ─────
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -1221,7 +1184,6 @@
             });
         });
 
-        // ───── ВЫХОД ─────
         document.getElementById('logoutLink').addEventListener('click', (e) => {
             e.preventDefault();
             auth.signOut().then(() => {
@@ -1229,19 +1191,12 @@
             });
         });
 
-        // ───── ЗАГРУЗКА ПРИ СТАРТЕ ─────
         window.showPaymentModal = function(orderId, masterId, amount) {
             alert(`💳 Демо-режим: Предложение оплаты на сумму ${amount} ₽ отправлено клиенту.`);
         };
 
-        // ───── ПРИНУДИТЕЛЬНОЕ ЗАКРЫТИЕ ПРИ ЗАГРУЗКЕ ─────
-        window.addEventListener('load', function() {
-            forceCloseModal();
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            forceCloseModal();
-        });
+        window.addEventListener('load', forceCloseModal);
+        document.addEventListener('DOMContentLoaded', forceCloseModal);
     </script>
 </body>
 </html>

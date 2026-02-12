@@ -18,7 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <!-- PWA Манифест -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ВоркХом">
@@ -723,6 +723,7 @@
                     role: role,
                     rating: 0,
                     reviews: 0,
+                    categories: role === 'master' ? 'Ремонт и отделка' : '',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -782,6 +783,9 @@
                 document.getElementById('orderForm').reset();
                 document.getElementById('latitude').value = '';
                 document.getElementById('longitude').value = '';
+                if (map) {
+                    map.geoObjects.removeAll();
+                }
                 
                 setTimeout(() => {
                     document.getElementById('successMessage').classList.add('hidden');
@@ -797,53 +801,89 @@
             }
         });
 
+        // ==================== ИСПРАВЛЕННАЯ ЗАГРУЗКА ЗАКАЗОВ (РОЛЕВАЯ МОДЕЛЬ) ====================
         async function loadOrders() {
             const ordersList = document.getElementById('ordersList');
             
             try {
-                console.log('🔄 Загружаем заказы...');
+                let query;
                 
-                let query = db.collection('orders')
-                    .where('status', '==', 'open')
-                    .orderBy('createdAt', 'desc')
-                    .limit(10);
+                // ЕСЛИ МАСТЕР — видит ВСЕ открытые заказы
+                if (currentUserRole === 'master') {
+                    query = db.collection('orders')
+                        .where('status', '==', 'open')
+                        .orderBy('createdAt', 'desc')
+                        .limit(10);
+                } 
+                // ЕСЛИ КЛИЕНТ или НЕ АВТОРИЗОВАН — видит ТОЛЬКО СВОИ заказы
+                else {
+                    if (currentUser) {
+                        query = db.collection('orders')
+                            .where('clientId', '==', currentUser.uid)
+                            .orderBy('createdAt', 'desc')
+                            .limit(10);
+                    } else {
+                        ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-soft);">🔒 Войдите, чтобы увидеть свои заказы</div>';
+                        return;
+                    }
+                }
                 
                 const snapshot = await query.get();
 
-                console.log('📦 Заказов найдено:', snapshot.size);
-
                 if (snapshot.empty) {
-                    ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-soft);">🚫 Пока нет активных заявок. Будьте первым!</div>';
+                    if (currentUserRole === 'master') {
+                        ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-soft);">🔧 Пока нет открытых заказов</div>';
+                    } else {
+                        ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-soft);">📭 У вас пока нет заказов. Создайте первый!</div>';
+                    }
                     return;
                 }
 
                 ordersList.innerHTML = '';
                 snapshot.forEach(doc => {
                     const order = { id: doc.id, ...doc.data() };
-                    console.log('📋 Заказ:', order.title);
                     ordersList.appendChild(createOrderCard(order));
                 });
+                
             } catch (error) {
-                console.error('🔥 Ошибка загрузки заявок:', error);
+                console.error('Ошибка загрузки заявок:', error);
                 
                 if (error.code === 'failed-precondition') {
                     ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">⚠️ Требуется создать индекс. Нажмите кнопку "Обновить" через минуту.</div>';
                 } else {
-                    ordersList.innerHTML = `<div style="text-align: center; padding: 40px; color: #E67A4B;">❌ Ошибка: ${error.message}</div>`;
+                    ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">❌ Ошибка загрузки. Обновите страницу.</div>';
                 }
             }
         }
 
+        // ==================== ИСПРАВЛЕННАЯ КАРТОЧКА ЗАКАЗА ====================
         function createOrderCard(order) {
             const div = document.createElement('div');
             div.className = 'order-item';
             
+            // Клиент видит только свои заказы, мастер видит все
             let html = `
                 <div class="order-header">
                     <div class="order-title">${order.title || 'Заказ'}</div>
                     <div class="order-price">${order.price || 0} ₽</div>
                 </div>
                 <div class="order-desc">${order.description || 'Нет описания'}</div>
+            `;
+
+            // Фото (если есть)
+            if (order.photos && order.photos.length > 0) {
+                html += `<div class="order-photos">`;
+                order.photos.slice(0, 3).forEach(url => {
+                    html += `<img src="${url}" class="order-photo" onclick="window.open('${url}')">`;
+                });
+                if (order.photos.length > 3) {
+                    html += `<span style="display: flex; align-items: center; padding: 0 12px;">+${order.photos.length - 3}</span>`;
+                }
+                html += `</div>`;
+            }
+
+            // Информация о заказе
+            html += `
                 <div class="order-contact">
                     <i class="fas fa-user"></i> ${order.clientName || 'Клиент'} · 
                     <i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}
@@ -851,7 +891,8 @@
                 <span class="order-category">${order.category || 'Без категории'}</span>
             `;
 
-            if (currentUserRole === 'master') {
+            // КНОПКА ОТКЛИКА — ТОЛЬКО ДЛЯ МАСТЕРОВ
+            if (currentUserRole === 'master' && order.status === 'open') {
                 html += `
                     <div style="margin-top: 20px;">
                         <button class="btn-outline" onclick="respondToOrder('${order.id}')" style="width: 100%;">
@@ -859,6 +900,37 @@
                         </button>
                     </div>
                 `;
+            }
+
+            // ОТКЛИКИ — ТОЛЬКО ДЛЯ КЛИЕНТА В ЕГО ЗАКАЗАХ
+            if (order.responses?.length > 0 && 
+                currentUserRole === 'client' && 
+                order.clientId === currentUser?.uid) {
+                
+                html += `<div class="responses"><h4>📩 Отклики (${order.responses.length})</h4>`;
+                order.responses.forEach(resp => {
+                    const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
+                    html += `
+                        <div class="response-item">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="font-weight: 700;">${resp.masterName || 'Мастер'}</span>
+                                <span style="color: var(--accent);">${resp.price || 0} ₽</span>
+                            </div>
+                            <p style="margin-top: 8px;">${resp.comment || ''}</p>
+                            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn-outline">
+                                    💬 Чат
+                                </button>
+                                ${order.status === 'open' ? `
+                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price || 0})" class="btn">
+                                        ✅ Выбрать
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
             }
 
             div.innerHTML = html;
@@ -901,7 +973,7 @@
             }
         }
 
-        // ==================== ИСПРАВЛЕНО: respondToOrder без timestamp в объекте ====================
+        // ==================== ИСПРАВЛЕННЫЙ ОТКЛИК (БЕЗ TIMESTAMP) ====================
         window.respondToOrder = async function(orderId) {
             if (!currentUser || currentUserRole !== 'master') {
                 alert('Эта функция доступна только мастерам.');
@@ -921,7 +993,6 @@
                 
                 const masterData = userDoc.data();
 
-                // ✅ СОЗДАЁМ ОБЪЕКТ БЕЗ timestamp
                 const response = {
                     masterId: currentUser.uid,
                     masterName: masterData.name || 'Мастер',
@@ -930,12 +1001,10 @@
                     masterReviews: masterData.reviews || 0,
                     price: parseInt(price),
                     comment: comment || '',
-                    // ❌ НЕ ПИШЕМ timestamp ЗДЕСЬ!
                 };
 
                 const orderRef = db.collection('orders').doc(orderId);
                 
-                // ✅ ДОБАВЛЯЕМ timestamp ОТДЕЛЬНО через update
                 await orderRef.update({
                     responses: firebase.firestore.FieldValue.arrayUnion(response),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -946,6 +1015,28 @@
             } catch (error) {
                 console.error('Ошибка при отклике:', error);
                 alert('❌ Ошибка: ' + error.message);
+            }
+        };
+
+        window.openChat = function(orderId, masterId) {
+            window.location.href = `chat.html?orderId=${orderId}&masterId=${masterId}`;
+        };
+
+        window.selectMaster = async function(orderId, masterId, price) {
+            if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
+            
+            try {
+                await db.collection('orders').doc(orderId).update({
+                    status: 'in_progress',
+                    selectedMasterId: masterId,
+                    selectedPrice: price
+                });
+                
+                showNotification('✅ Мастер выбран! Чат открыт.');
+                loadOrders();
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при выборе мастера');
             }
         };
 
@@ -998,7 +1089,7 @@
         window.showPaymentModal = function(orderId, masterId, amount) {
             document.getElementById('paymentModal').classList.remove('hidden');
             document.getElementById('paymentDetails').innerHTML = `
-                <p style="margin-bottom: 16px;">Заказ: #${orderId}</p>
+                <p style="margin-bottom: 16px;">Заказ: #${orderId.slice(-5)}</p>
                 <p style="font-size: 24px; font-weight: 700; color: var(--accent);">${amount} ₽</p>
                 <p style="margin-top: 16px; color: var(--text-soft);">💡 Демо-режим</p>
             `;

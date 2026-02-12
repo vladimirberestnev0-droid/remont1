@@ -189,6 +189,13 @@
             transform: scale(1.05);
         }
 
+        .typing-indicator {
+            font-size: 12px;
+            color: var(--text-soft);
+            padding: 4px 16px;
+            font-style: italic;
+        }
+
         .empty-chat {
             text-align: center;
             color: var(--text-soft);
@@ -236,6 +243,10 @@
             </div>
         </div>
 
+        <div id="typingIndicator" class="typing-indicator hidden">
+            собеседник печатает...
+        </div>
+
         <div class="chat-input-area">
             <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
             <button id="sendButton" class="send-btn">
@@ -266,6 +277,9 @@
         let chatId = null;
         let orderData = null;
         let unsubscribe = null;
+        let unsubscribeTyping = null;
+        let partnerId = null;
+        let typingTimeout = null;
 
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
@@ -284,7 +298,20 @@
             await loadOrderData();
             await initializeChat();
             listenToMessages();
+            setupTypingIndicator();
         });
+
+        async function loadPartnerData(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    return userDoc.data().name || 'Пользователь';
+                }
+            } catch (e) {
+                console.log('Не удалось загрузить имя пользователя');
+            }
+            return null;
+        }
 
         async function loadOrderData() {
             try {
@@ -297,18 +324,17 @@
 
                 orderData = { id: orderDoc.id, ...orderDoc.data() };
                 
-                let partnerId, partnerName, partnerRole;
-                
                 if (orderData.clientId === currentUser.uid) {
                     // Текущий пользователь - клиент
                     partnerId = masterId;
                     partnerRole = 'Мастер';
                     
+                    const loadedName = await loadPartnerData(partnerId);
                     const masterDoc = await db.collection('users').doc(masterId).get();
                     if (masterDoc.exists) {
-                        partnerName = masterDoc.data().name || 'Мастер';
+                        partnerName = loadedName || masterDoc.data().name || 'Мастер';
                     } else {
-                        partnerName = 'Мастер';
+                        partnerName = loadedName || 'Мастер';
                     }
                     
                     chatId = `chat_${orderId}_${partnerId}`;
@@ -316,7 +342,10 @@
                     // Текущий пользователь - мастер
                     partnerId = orderData.clientId;
                     partnerRole = 'Клиент';
-                    partnerName = orderData.clientName || 'Клиент';
+                    
+                    const loadedName = await loadPartnerData(partnerId);
+                    partnerName = loadedName || orderData.clientName || 'Клиент';
+                    
                     chatId = `chat_${orderId}_${currentUser.uid}`;
                 }
 
@@ -381,7 +410,6 @@
                         messagesArea.appendChild(messageElement);
                     });
                     
-                    // Скролл вниз
                     setTimeout(() => {
                         messagesArea.scrollTop = messagesArea.scrollHeight;
                     }, 100);
@@ -396,13 +424,28 @@
                 });
         }
 
+        function formatMessageTime(timestamp) {
+            if (!timestamp) return 'только что';
+            
+            const date = timestamp.toDate();
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 86400000) {
+                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            } else if (diff < 172800000) {
+                return 'вчера, ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + 
+                       ', ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
         function createMessageElement(message) {
             const div = document.createElement('div');
             div.className = `message ${message.senderId === currentUser?.uid ? 'sent' : 'received'}`;
             
-            const time = message.timestamp 
-                ? new Date(message.timestamp.toDate()).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-                : 'только что';
+            const time = formatMessageTime(message.timestamp);
             
             div.innerHTML = `
                 <div class="message-bubble">${escapeHtml(message.text) || '...'}</div>
@@ -412,7 +455,6 @@
             return div;
         }
 
-        // Защита от XSS
         function escapeHtml(text) {
             if (!text) return '';
             const map = {
@@ -423,6 +465,39 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        function setupTypingIndicator() {
+            if (!chatId || !partnerId) return;
+            
+            const typingRef = db.collection('chats').doc(chatId).collection('typing').doc(currentUser.uid);
+            const input = document.getElementById('messageInput');
+            
+            input.addEventListener('input', () => {
+                typingRef.set({
+                    isTyping: true,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    typingRef.delete();
+                }, 2000);
+            });
+            
+            if (unsubscribeTyping) {
+                unsubscribeTyping();
+            }
+            
+            const partnerTypingRef = db.collection('chats').doc(chatId).collection('typing').doc(partnerId);
+            unsubscribeTyping = partnerTypingRef.onSnapshot((doc) => {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (doc.exists && doc.data().isTyping) {
+                    typingIndicator.classList.remove('hidden');
+                } else {
+                    typingIndicator.classList.add('hidden');
+                }
+            });
         }
 
         async function sendMessage() {
@@ -447,6 +522,10 @@
                 });
                 
                 input.value = '';
+                
+                const typingRef = db.collection('chats').doc(chatId).collection('typing').doc(currentUser.uid);
+                await typingRef.delete();
+                
             } catch (error) {
                 console.error('Ошибка отправки:', error);
                 alert('Не удалось отправить сообщение. Проверьте правила Firestore.');
@@ -461,10 +540,12 @@
             }
         });
 
-        // Отписка при уходе со страницы
         window.addEventListener('beforeunload', () => {
             if (unsubscribe) {
                 unsubscribe();
+            }
+            if (unsubscribeTyping) {
+                unsubscribeTyping();
             }
         });
     </script>
