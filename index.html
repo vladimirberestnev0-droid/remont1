@@ -9,12 +9,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia:ital@1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <!-- Яндекс.Карты -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш-ключ&lang=ru_RU" type="text/javascript"></script>
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    
+    <!-- PWA Манифест -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ВоркХом">
+    <link rel="apple-touch-icon" href="/icons/icon-152.png">
+    <meta name="theme-color" content="#1E2B3C">
     
     <style>
+        /* ───── ПОЛНЫЙ СТИЛЬ ВОРКХОМ ───── */
         :root {
             --primary: #1E2B3C;
             --accent: #E67A4B;
@@ -23,6 +36,8 @@
             --text-soft: #5A6B7A;
             --white: #FFFFFF;
             --border: #E2E8F0;
+            --success: #00A86B;
+            --warning: #FFB020;
         }
 
         * {
@@ -46,7 +61,7 @@
         }
 
         .container {
-            max-width: 1280px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -55,7 +70,7 @@
             border-radius: 24px;
             padding: 24px 40px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-            margin-bottom: 48px;
+            margin-bottom: 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -94,8 +109,13 @@
             margin-left: 44px;
         }
 
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
         nav a {
-            margin-left: 32px;
             text-decoration: none;
             color: var(--text-soft);
             font-weight: 500;
@@ -106,25 +126,53 @@
             color: var(--accent);
         }
 
+        .install-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .hero {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-bottom: 48px;
+            gap: 30px;
+            margin-bottom: 30px;
         }
 
-        .form-card, .orders-card, .auth-card {
+        .form-card, .orders-card, .auth-card, .map-card {
             background: var(--white);
-            border-radius: 32px;
-            padding: 40px;
+            border-radius: 24px;
+            padding: 32px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.02);
         }
 
+        .map-card {
+            grid-column: span 2;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px;
+            border-radius: 16px;
+            margin-top: 16px;
+        }
+
         h2 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
             color: var(--primary);
-            margin-bottom: 28px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .form-group {
@@ -144,7 +192,7 @@
             padding: 14px 18px;
             border: 1px solid var(--border);
             border-radius: 16px;
-            font-size: 16px;
+            font-size: 15px;
             transition: 0.2s;
             background: var(--bg-light);
         }
@@ -156,8 +204,45 @@
         }
 
         textarea {
-            min-height: 120px;
+            min-height: 100px;
             resize: vertical;
+        }
+
+        .file-upload {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-light);
+            border: 1px dashed var(--border);
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        .file-upload i {
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        .file-upload span {
+            color: var(--text-soft);
+            font-size: 14px;
+        }
+
+        #photoPreview {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .preview-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid var(--border);
         }
 
         .btn {
@@ -171,6 +256,10 @@
             cursor: pointer;
             transition: 0.2s;
             width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .btn:hover {
@@ -189,8 +278,12 @@
             background: var(--bg-light);
             color: var(--accent);
             border-color: var(--accent);
-            box-shadow: none;
             transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success);
         }
 
         .order-item {
@@ -217,11 +310,13 @@
         .order-title {
             font-weight: 700;
             color: var(--primary);
+            font-size: 18px;
         }
 
         .order-price {
             color: var(--accent);
             font-weight: 700;
+            font-size: 18px;
         }
 
         .order-desc {
@@ -236,6 +331,22 @@
             margin-bottom: 8px;
         }
 
+        .order-photos {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .order-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid var(--white);
+        }
+
         .order-category {
             display: inline-block;
             background: white;
@@ -246,6 +357,22 @@
             border: 1px solid var(--border);
         }
 
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 8px 0;
+        }
+
+        .star {
+            color: #FFD700;
+            font-size: 16px;
+        }
+
+        .star.empty {
+            color: var(--border);
+        }
+
         .responses {
             margin-top: 16px;
             padding-top: 16px;
@@ -254,27 +381,59 @@
 
         .response-item {
             background: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
         }
 
-        .chat-btn {
-            background: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            padding: 8px 20px;
+        .master-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-light);
+            padding: 4px 12px;
             border-radius: 40px;
             font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 12px;
+            margin-left: 12px;
         }
 
-        .chat-btn:hover {
-            background: var(--accent);
-            color: white;
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--white);
+            border-left: 4px solid var(--accent);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .payment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .payment-card {
+            background: white;
+            padding: 32px;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 90%;
         }
 
         .auth-tabs {
@@ -343,10 +502,12 @@
 
         @media (max-width: 1000px) {
             .hero { grid-template-columns: 1fr; }
+            .map-card { grid-column: span 1; }
         }
+
         @media (max-width: 700px) {
             header { flex-direction: column; text-align: center; }
-            nav a { margin: 0 12px; }
+            nav { flex-wrap: wrap; justify-content: center; }
             .slogan { margin-left: 0; }
         }
     </style>
@@ -362,13 +523,16 @@
                 <div class="slogan">С нами проще. Вы хотите — мы делаем.</div>
             </div>
             <nav>
-                <a href="#form">Оставить заявку</a>
-                <a href="#orders">Заказы</a>
+                <a href="index.html">Главная</a>
+                <a href="client.html">Мои заказы</a>
                 <a href="masters.html">Мастерам</a>
+                <button id="installButton" class="install-btn hidden">
+                    <i class="fas fa-download"></i> Установить
+                </button>
             </nav>
         </header>
 
-        <div id="authBlock" class="auth-card" style="margin-bottom: 48px;">
+        <div id="authBlock" class="auth-card" style="margin-bottom: 32px;">
             <div class="auth-tabs">
                 <div id="tabLogin" class="auth-tab active">Вход</div>
                 <div id="tabRegister" class="auth-tab">Регистрация</div>
@@ -419,7 +583,7 @@
             </div>
         </div>
 
-        <div id="userInfoBlock" class="auth-card hidden" style="margin-bottom: 48px;">
+        <div id="userInfoBlock" class="auth-card hidden" style="margin-bottom: 32px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h2 style="margin-bottom: 8px;">👤 Вы вошли как</h2>
@@ -433,7 +597,7 @@
         <div id="clientBlock">
             <div class="hero">
                 <div class="form-card">
-                    <h2 id="form">Оставьте заявку</h2>
+                    <h2><i class="fas fa-plus-circle" style="color: var(--accent);"></i> Оставить заявку</h2>
                     <form id="orderForm">
                         <div class="form-group">
                             <label>Категория ремонта</label>
@@ -445,6 +609,8 @@
                                 <option value="Мебель">Мебель / сборка</option>
                                 <option value="Окна и двери">Окна и двери</option>
                                 <option value="Бытовой ремонт">Бытовой ремонт</option>
+                                <option value="Клининг">Клининг</option>
+                                <option value="Ремонт техники">Ремонт техники</option>
                             </select>
                         </div>
                         
@@ -464,6 +630,30 @@
                         </div>
                         
                         <div class="form-group">
+                            <label>Адрес</label>
+                            <input type="text" id="address" placeholder="ул. Ленина, д. 10, кв. 5" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Координаты (Яндекс.Карты)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="latitude" placeholder="Широта" readonly>
+                                <input type="text" id="longitude" placeholder="Долгота" readonly>
+                            </div>
+                            <div id="map" style="height: 250px; margin-top: 12px;"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Фото проблемы</label>
+                            <div class="file-upload" onclick="document.getElementById('photoInput').click();">
+                                <i class="fas fa-camera"></i>
+                                <span>Загрузить фото (до 5 шт.)</span>
+                            </div>
+                            <input type="file" id="photoInput" accept="image/*" multiple style="display: none;">
+                            <div id="photoPreview"></div>
+                        </div>
+                        
+                        <div class="form-group">
                             <label>Ваше имя</label>
                             <input type="text" id="clientName" placeholder="Имя" required>
                         </div>
@@ -473,37 +663,54 @@
                             <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
                         </div>
                         
-                        <div class="form-group">
-                            <label>Район города</label>
-                            <input type="text" id="district" placeholder="Например: Центральный">
-                        </div>
-                        
-                        <button type="submit" class="btn">Опубликовать заявку</button>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-paper-plane"></i> Опубликовать заявку
+                        </button>
                     </form>
                     
-                    <div id="successMessage" class="hidden" style="background: var(--accent); color: white; padding: 16px; border-radius: 16px; text-align: center; margin-top: 24px;">
+                    <div id="successMessage" class="hidden" style="background: var(--success); color: white; padding: 16px; border-radius: 16px; text-align: center; margin-top: 24px;">
                         ✅ Заявка создана! Мастера увидят её в течение 5 минут.
                     </div>
                 </div>
                 
                 <div class="orders-card">
-                    <h2 id="orders">Последние заявки</h2>
+                    <h2><i class="fas fa-list" style="color: var(--accent);"></i> Свежие заявки</h2>
                     <div id="ordersList"></div>
-                    <button class="btn" id="refreshBtn" style="margin-top: 24px; background: #1E2B3C;">🔄 Обновить список</button>
+                    <button class="btn-outline" id="refreshBtn" style="margin-top: 24px; width: 100%;">
+                        <i class="fas fa-sync-alt"></i> Обновить список
+                    </button>
                 </div>
             </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 40px;">
-            <a href="masters.html" class="btn-outline" style="display: inline-block; padding: 16px 32px;">Перейти в кабинет мастера →</a>
+            
+            <div class="map-card">
+                <h2><i class="fas fa-map-marked-alt" style="color: var(--accent);"></i> Заявки на карте</h2>
+                <div id="ordersMap" style="width: 100%; height: 400px; border-radius: 16px;"></div>
+            </div>
         </div>
 
         <footer>
             <p>© 2025 ВоркХом — заказы сами находят мастеров</p>
+            <p style="margin-top: 8px; font-size: 13px;">
+                <i class="fas fa-mobile-alt"></i> Установите приложение на телефон |
+                <i class="fas fa-shield-alt"></i> Безопасная сделка |
+                <i class="fas fa-star"></i> Рейтинг мастеров
+            </p>
         </footer>
     </div>
 
+    <div id="paymentModal" class="payment-modal hidden">
+        <div class="payment-card">
+            <h2 style="margin-bottom: 20px;">💳 Безопасная оплата</h2>
+            <div id="paymentDetails"></div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn" id="confirmPayment" style="flex: 1;">Оплатить</button>
+                <button class="btn-outline" id="closePayment" style="flex: 1;">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // ───── FIREBASE КОНФИГ ─────
         const firebaseConfig = {
             apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
             authDomain: "homework-6a562.firebaseapp.com",
@@ -516,10 +723,71 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        const storage = firebase.storage();
 
         let currentUser = null;
         let currentUserRole = null;
+        let map = null;
+        let ordersMap = null;
+        let selectedFiles = [];
+        let ymapsReady = false;
 
+        // ───── ИНИЦИАЛИЗАЦИЯ ЯНДЕКС.КАРТ ─────
+        ymaps.ready(initMaps);
+        
+        function initMaps() {
+            ymapsReady = true;
+            
+            // Карта для выбора адреса
+            if (document.getElementById('map')) {
+                map = new ymaps.Map('map', {
+                    center: [55.7558, 37.6173],
+                    zoom: 10
+                });
+                
+                map.events.add('click', function(e) {
+                    const coords = e.get('coords');
+                    document.getElementById('latitude').value = coords[0].toFixed(6);
+                    document.getElementById('longitude').value = coords[1].toFixed(6);
+                    
+                    ymaps.geocode(coords).then(function(res) {
+                        const firstGeoObject = res.geoObjects.get(0);
+                        document.getElementById('address').value = firstGeoObject.getAddressLine();
+                    });
+                    
+                    map.geoObjects.removeAll();
+                    map.geoObjects.add(new ymaps.Placemark(coords));
+                });
+            }
+            
+            // Карта для отображения заявок
+            if (document.getElementById('ordersMap')) {
+                ordersMap = new ymaps.Map('ordersMap', {
+                    center: [55.7558, 37.6173],
+                    zoom: 10
+                });
+            }
+        }
+
+        // ───── ЗАГРУЗКА ФОТО ─────
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            selectedFiles = Array.from(e.target.files);
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-image';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // ───── АВТОРИЗАЦИЯ ─────
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             if (user) {
@@ -529,37 +797,44 @@
                 }
                 showUserInfo(user.email, currentUserRole);
                 hideAuthBlock();
+                checkForNotifications();
             } else {
                 currentUserRole = null;
                 showAuthBlock();
                 hideUserInfo();
             }
             loadOrders();
+            loadOrdersMap();
         });
 
         function showAuthBlock() {
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('userInfoBlock').classList.add('hidden');
         }
+        
         function hideAuthBlock() {
             document.getElementById('authBlock').classList.add('hidden');
         }
+        
         function showUserInfo(email, role) {
             document.getElementById('userInfoBlock').classList.remove('hidden');
             document.getElementById('userEmailDisplay').innerText = email;
             document.getElementById('userRoleDisplay').innerText = role === 'master' ? 'Мастер' : 'Клиент';
             document.getElementById('authBlock').classList.add('hidden');
         }
+        
         function hideUserInfo() {
             document.getElementById('userInfoBlock').classList.add('hidden');
         }
 
+        // ───── ВКЛАДКИ ─────
         document.getElementById('tabLogin').addEventListener('click', function() {
             document.getElementById('tabLogin').classList.add('active');
             document.getElementById('tabRegister').classList.remove('active');
             document.getElementById('loginForm').classList.add('active');
             document.getElementById('registerForm').classList.remove('active');
         });
+        
         document.getElementById('tabRegister').addEventListener('click', function() {
             document.getElementById('tabRegister').classList.add('active');
             document.getElementById('tabLogin').classList.remove('active');
@@ -567,6 +842,7 @@
             document.getElementById('loginForm').classList.remove('active');
         });
 
+        // ───── РЕГИСТРАЦИЯ ─────
         document.getElementById('registerBtn').addEventListener('click', async () => {
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
@@ -583,6 +859,8 @@
                     email: email,
                     phone: phone,
                     role: role,
+                    rating: 0,
+                    reviews: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -593,6 +871,7 @@
             }
         });
 
+        // ───── ВХОД ─────
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -605,10 +884,12 @@
             }
         });
 
+        // ───── ВЫХОД ─────
         document.getElementById('logoutBtn').addEventListener('click', () => {
             auth.signOut();
         });
 
+        // ───── СОЗДАНИЕ ЗАЯВКИ ─────
         document.getElementById('orderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -617,14 +898,29 @@
                 return;
             }
 
+            const orderId = db.collection('orders').doc().id;
+            const photoUrls = [];
+
+            // Загрузка фото
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const storageRef = storage.ref(`orders/${orderId}/photo_${i}`);
+                await storageRef.put(file);
+                const url = await storageRef.getDownloadURL();
+                photoUrls.push(url);
+            }
+
             const order = {
                 category: document.getElementById('category').value,
                 title: document.getElementById('title').value,
                 description: document.getElementById('description').value,
                 price: parseInt(document.getElementById('price').value),
+                address: document.getElementById('address').value,
+                latitude: parseFloat(document.getElementById('latitude').value) || 55.7558,
+                longitude: parseFloat(document.getElementById('longitude').value) || 37.6173,
+                photos: photoUrls,
                 clientName: document.getElementById('clientName').value,
                 clientPhone: document.getElementById('phone').value,
-                district: document.getElementById('district').value,
                 clientId: currentUser.uid,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 status: 'open',
@@ -632,19 +928,28 @@
             };
 
             try {
-                await db.collection('orders').add(order);
+                await db.collection('orders').doc(orderId).set(order);
                 document.getElementById('successMessage').classList.remove('hidden');
                 document.getElementById('orderForm').reset();
+                document.getElementById('photoPreview').innerHTML = '';
+                selectedFiles = [];
+                
                 setTimeout(() => {
                     document.getElementById('successMessage').classList.add('hidden');
                 }, 5000);
+                
                 loadOrders();
+                loadOrdersMap();
+                
+                // Уведомление мастерам (имитация)
+                showNotification('Новая заявка в категории ' + order.category);
             } catch (error) {
                 console.error('Ошибка при создании заявки:', error);
                 alert('Ошибка при создании заявки. Попробуйте ещё раз.');
             }
         });
 
+        // ───── ЗАГРУЗКА ЗАЯВОК ─────
         async function loadOrders() {
             const ordersList = document.getElementById('ordersList');
             
@@ -656,63 +961,100 @@
                     .get();
 
                 if (snapshot.empty) {
-                    ordersList.innerHTML = '<p style="color: #5A6B7A;">Пока нет заявок. Будьте первым!</p>';
+                    ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-soft);">Пока нет заявок. Будьте первым!</div>';
                     return;
                 }
 
                 ordersList.innerHTML = '';
                 snapshot.forEach(doc => {
                     const order = { id: doc.id, ...doc.data() };
-                    const orderElement = document.createElement('div');
-                    orderElement.className = 'order-item';
-                    
-                    let html = `
-                        <div class="order-header">
-                            <div class="order-title">${order.title}</div>
-                            <div class="order-price">${order.price} ₽</div>
-                        </div>
-                        <div class="order-desc">${order.description}</div>
-                        <div class="order-contact">${order.clientName}, ${order.clientPhone} · ${order.district || 'район не указан'}</div>
-                        <span class="order-category">${order.category}</span>
-                    `;
-
-                    if (currentUserRole === 'master') {
-                        html += `
-                            <div style="margin-top: 20px;">
-                                <button class="btn-outline" onclick="respondToOrder('${order.id}')" style="width: auto;">📩 Откликнуться</button>
-                            </div>
-                        `;
-                    }
-
-                    if (order.responses && order.responses.length > 0 && currentUserRole === 'client' && order.clientId === currentUser?.uid) {
-                        html += `<div class="responses"><h4 style="margin-bottom: 12px;">Отклики мастеров (${order.responses.length})</h4>`;
-                        order.responses.forEach(resp => {
-                            html += `
-                                <div class="response-item">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span style="font-weight: 700;">${resp.masterName}</span>
-                                        <span style="color: var(--accent); font-weight: 700;">${resp.price} ₽</span>
-                                    </div>
-                                    <p style="margin-top: 8px; color: var(--text-soft);">${resp.comment}</p>
-                                    <p style="margin-top: 8px; font-size: 13px; color: var(--text-soft);">📞 ${resp.masterPhone}</p>
-                                    <button onclick="openChat('${order.id}', '${resp.masterId}')" class="chat-btn">
-                                        <i class="fas fa-comment"></i> Написать мастеру
-                                    </button>
-                                </div>
-                            `;
-                        });
-                        html += `</div>`;
-                    }
-
-                    orderElement.innerHTML = html;
-                    ordersList.appendChild(orderElement);
+                    ordersList.appendChild(createOrderCard(order));
                 });
             } catch (error) {
                 console.error('Ошибка загрузки заявок:', error);
-                ordersList.innerHTML = '<p style="color: #E67A4B;">Ошибка загрузки. Обновите страницу.</p>';
+                ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">Ошибка загрузки. Обновите страницу.</div>';
             }
         }
 
+        function createOrderCard(order) {
+            const div = document.createElement('div');
+            div.className = 'order-item';
+            
+            let photosHtml = '';
+            if (order.photos && order.photos.length > 0) {
+                photosHtml = '<div class="order-photos">';
+                order.photos.forEach(url => {
+                    photosHtml += `<img src="${url}" class="order-photo" onclick="window.open('${url}')">`;
+                });
+                photosHtml += '</div>';
+            }
+            
+            let html = `
+                <div class="order-header">
+                    <div class="order-title">${order.title}</div>
+                    <div class="order-price">${order.price} ₽</div>
+                </div>
+                <div class="order-desc">${order.description}</div>
+                ${photosHtml}
+                <div class="order-contact">
+                    <i class="fas fa-user"></i> ${order.clientName} · 
+                    <i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}
+                </div>
+                <span class="order-category">${order.category}</span>
+            `;
+
+            if (currentUserRole === 'master') {
+                html += `
+                    <div style="margin-top: 20px;">
+                        <button class="btn-outline" onclick="respondToOrder('${order.id}')" style="width: 100%;">
+                            <i class="fas fa-reply"></i> Откликнуться
+                        </button>
+                    </div>
+                `;
+            }
+
+            div.innerHTML = html;
+            return div;
+        }
+
+        // ───── КАРТА ЗАЯВОК ─────
+        async function loadOrdersMap() {
+            if (!ymapsReady || !ordersMap) return;
+            
+            ordersMap.geoObjects.removeAll();
+            
+            try {
+                const snapshot = await db.collection('orders')
+                    .where('status', '==', 'open')
+                    .limit(50)
+                    .get();
+
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    if (order.latitude && order.longitude) {
+                        const placemark = new ymaps.Placemark(
+                            [order.latitude, order.longitude],
+                            {
+                                balloonContent: `
+                                    <strong>${order.title}</strong><br>
+                                    ${order.price} ₽<br>
+                                    ${order.address}
+                                `
+                            },
+                            {
+                                preset: 'islands#icon',
+                                iconColor: '#E67A4B'
+                            }
+                        );
+                        ordersMap.geoObjects.add(placemark);
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки карты:', error);
+            }
+        }
+
+        // ───── ОТКЛИК НА ЗАЯВКУ ─────
         window.respondToOrder = async function(orderId) {
             if (!currentUser || currentUserRole !== 'master') {
                 alert('Эта функция доступна только мастерам.');
@@ -731,6 +1073,8 @@
                 masterId: currentUser.uid,
                 masterName: masterData.name,
                 masterPhone: masterData.phone,
+                masterRating: masterData.rating || 0,
+                masterReviews: masterData.reviews || 0,
                 price: parseInt(price),
                 comment: comment,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -749,11 +1093,92 @@
             }
         };
 
-        window.openChat = function(orderId, masterId) {
-            window.location.href = `chat.html?orderId=${orderId}&masterId=${masterId}`;
+        // ───── УВЕДОМЛЕНИЯ ─────
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-bell" style="color: var(--accent);"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        async function checkForNotifications() {
+            if (currentUserRole !== 'master') return;
+            
+            // Проверяем новые заявки каждые 30 секунд
+            const lastCheck = localStorage.getItem('lastCheck') || 0;
+            const now = Date.now();
+            
+            if (now - lastCheck > 30000) {
+                localStorage.setItem('lastCheck', now);
+                
+                const snapshot = await db.collection('orders')
+                    .where('status', '==', 'open')
+                    .orderBy('createdAt', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    const lastOrder = snapshot.docs[0].data();
+                    const orderTime = lastOrder.createdAt?.toDate().getTime() || 0;
+                    
+                    if (orderTime > lastCheck) {
+                        showNotification('📢 Новая заявка! ' + lastOrder.title);
+                    }
+                }
+            }
+        }
+
+        // ───── ОПЛАТА ─────
+        window.showPaymentModal = function(orderId, masterId, amount) {
+            document.getElementById('paymentModal').classList.remove('hidden');
+            document.getElementById('paymentDetails').innerHTML = `
+                <p style="margin-bottom: 16px;">Заказ: #${orderId}</p>
+                <p style="font-size: 24px; font-weight: 700; color: var(--accent);">${amount} ₽</p>
+                <p style="margin-top: 16px; color: var(--text-soft);">Демо-режим: оплата не производится</p>
+            `;
+            
+            document.getElementById('confirmPayment').onclick = () => {
+                alert('Оплата принята! В боевом режиме здесь будет интеграция с ЮKassa.');
+                document.getElementById('paymentModal').classList.add('hidden');
+            };
         };
 
-        document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+        document.getElementById('closePayment').addEventListener('click', () => {
+            document.getElementById('paymentModal').classList.add('hidden');
+        });
+
+        // ───── PWA УСТАНОВКА ─────
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installButton').classList.remove('hidden');
+        });
+
+        document.getElementById('installButton').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            document.getElementById('installButton').classList.add('hidden');
+        });
+
+        // ───── КНОПКА ОБНОВЛЕНИЯ ─────
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            loadOrders();
+            loadOrdersMap();
+        });
+
+        // ───── ЗАГРУЗКА ПРИ СТАРТЕ ─────
         loadOrders();
     </script>
 </body>
