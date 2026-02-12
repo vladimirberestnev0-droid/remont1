@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мастерам — РемонтПросто</title>
+    <title>РњР°СЃС‚РµСЂР°Рј вЂ” Р РµРјРѕРЅС‚РџСЂРѕСЃС‚Рѕ</title>
     <style>
-        /* Копируй сюда ВСЕ стили из index.html (оставь как есть) */
+        /* РљРѕРїРёСЂСѓР№ СЃСЋРґР° Р’РЎР• СЃС‚РёР»Рё РёР· index.html (РѕСЃС‚Р°РІСЊ РєР°Рє РµСЃС‚СЊ) */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -146,39 +146,39 @@
     <div class="container">
         <header>
             <div class="logo">
-                ?? <span>Ремонт</span>Просто
+                рџ”§ <span>Р РµРјРѕРЅС‚</span>РџСЂРѕСЃС‚Рѕ
             </div>
             <nav>
-                <a href="index.html">Главная</a>
-                <a href="masters.html" style="color: #0984e3;">Мастерам</a>
-                <a href="#" id="logoutLink">Выход</a>
+                <a href="index.html">Р“Р»Р°РІРЅР°СЏ</a>
+                <a href="masters.html" style="color: #0984e3;">РњР°СЃС‚РµСЂР°Рј</a>
+                <a href="#" id="logoutLink">Р’С‹С…РѕРґ</a>
             </nav>
         </header>
 
         <div class="orders-card">
-            <h2>?? Кабинет мастера · Все заявки</h2>
+            <h2>рџ§° РљР°Р±РёРЅРµС‚ РјР°СЃС‚РµСЂР° В· Р’СЃРµ Р·Р°СЏРІРєРё</h2>
             
             <div id="filterButtons">
-                <button class="filter-btn active" data-filter="all">Все</button>
-                <button class="filter-btn" data-filter="Сантехника">?? Сантехника</button>
-                <button class="filter-btn" data-filter="Электрика">? Электрика</button>
-                <button class="filter-btn" data-filter="Отделочные работы">??? Отделка</button>
-                <button class="filter-btn" data-filter="Мебель">?? Мебель</button>
-                <button class="filter-btn" data-filter="Окна/двери">?? Окна/двери</button>
-                <button class="filter-btn" data-filter="Бытовой ремонт">?? Бытовой</button>
+                <button class="filter-btn active" data-filter="all">Р’СЃРµ</button>
+                <button class="filter-btn" data-filter="РЎР°РЅС‚РµС…РЅРёРєР°">рџљї РЎР°РЅС‚РµС…РЅРёРєР°</button>
+                <button class="filter-btn" data-filter="Р­Р»РµРєС‚СЂРёРєР°">вљЎ Р­Р»РµРєС‚СЂРёРєР°</button>
+                <button class="filter-btn" data-filter="РћС‚РґРµР»РѕС‡РЅС‹Рµ СЂР°Р±РѕС‚С‹">рџ› пёЏ РћС‚РґРµР»РєР°</button>
+                <button class="filter-btn" data-filter="РњРµР±РµР»СЊ">рџЄ‘ РњРµР±РµР»СЊ</button>
+                <button class="filter-btn" data-filter="РћРєРЅР°/РґРІРµСЂРё">рџљЄ РћРєРЅР°/РґРІРµСЂРё</button>
+                <button class="filter-btn" data-filter="Р‘С‹С‚РѕРІРѕР№ СЂРµРјРѕРЅС‚">рџ”Њ Р‘С‹С‚РѕРІРѕР№</button>
             </div>
 
             <div id="ordersList">
-                <!-- Заявки подгрузятся из localStorage -->
+                <!-- Р—Р°СЏРІРєРё РїРѕРґРіСЂСѓР·СЏС‚СЃСЏ РёР· localStorage -->
             </div>
 
-            <button class="btn" id="refreshBtn" style="margin-top: 20px; background: #00b894;">?? Обновить список</button>
+            <button class="btn" id="refreshBtn" style="margin-top: 20px; background: #00b894;">рџ”„ РћР±РЅРѕРІРёС‚СЊ СЃРїРёСЃРѕРє</button>
             <br>
-            <a href="index.html" class="back-link">< На главную</a>
+            <a href="index.html" class="back-link">в†ђ РќР° РіР»Р°РІРЅСѓСЋ</a>
         </div>
 
         <footer>
-            <p>© 2023 РемонтПросто — биржа заказов для мастеров</p>
+            <p>В© 2023 Р РµРјРѕРЅС‚РџСЂРѕСЃС‚Рѕ вЂ” Р±РёСЂР¶Р° Р·Р°РєР°Р·РѕРІ РґР»СЏ РјР°СЃС‚РµСЂРѕРІ</p>
         </footer>
     </div>
 
@@ -186,7 +186,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadOrders('all');
 
-            // Фильтры
+            // Р¤РёР»СЊС‚СЂС‹
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -196,13 +196,13 @@
                 });
             });
 
-            // Кнопка обновления
+            // РљРЅРѕРїРєР° РѕР±РЅРѕРІР»РµРЅРёСЏ
             document.getElementById('refreshBtn').addEventListener('click', function() {
                 const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
                 loadOrders(activeFilter);
             });
 
-            // Выход (пока просто переход на главную)
+            // Р’С‹С…РѕРґ (РїРѕРєР° РїСЂРѕСЃС‚Рѕ РїРµСЂРµС…РѕРґ РЅР° РіР»Р°РІРЅСѓСЋ)
             document.getElementById('logoutLink').addEventListener('click', function(e) {
                 e.preventDefault();
                 window.location.href = 'index.html';
@@ -214,7 +214,7 @@
             const ordersList = document.getElementById('ordersList');
 
             if (orders.length === 0) {
-                ordersList.innerHTML = '<p>Пока нет заявок. Будьте первым мастером!</p>';
+                ordersList.innerHTML = '<p>РџРѕРєР° РЅРµС‚ Р·Р°СЏРІРѕРє. Р‘СѓРґСЊС‚Рµ РїРµСЂРІС‹Рј РјР°СЃС‚РµСЂРѕРј!</p>';
                 return;
             }
 
@@ -224,7 +224,7 @@
             }
 
             if (filteredOrders.length === 0) {
-                ordersList.innerHTML = '<p>Заявок в этой категории нет.</p>';
+                ordersList.innerHTML = '<p>Р—Р°СЏРІРѕРє РІ СЌС‚РѕР№ РєР°С‚РµРіРѕСЂРёРё РЅРµС‚.</p>';
                 return;
             }
 
@@ -236,12 +236,12 @@
                 orderElement.innerHTML = `
                     <div class="order-header">
                         <div class="order-title">${order.title}</div>
-                        <div class="order-price">${order.price} ?</div>
+                        <div class="order-price">${order.price} в‚Ѕ</div>
                     </div>
                     <div class="order-desc">${order.description}</div>
-                    <div class="order-contact">?? ${order.clientName}, ${order.phone} (${order.district})</div>
+                    <div class="order-contact">рџ‘¤ ${order.clientName}, ${order.phone} (${order.district})</div>
                     <span class="order-category">${order.category}</span>
-                    <span class="order-category" style="background: #00b894; color: white;">?? ${order.date || 'сегодня'}</span>
+                    <span class="order-category" style="background: #00b894; color: white;">рџ“… ${order.date || 'СЃРµРіРѕРґРЅСЏ'}</span>
                 `;
                 ordersList.appendChild(orderElement);
             });
