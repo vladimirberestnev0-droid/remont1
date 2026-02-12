@@ -964,4 +964,304 @@
                 allResponses = myResponses;
 
                 // Обновляем статистику
-                updateStats(myResponses
+                updateStats(myResponses);
+
+                // Фильтруем
+                let filteredResponses = myResponses;
+                if (filter === 'pending') {
+                    filteredResponses = myResponses.filter(r => r.status === 'open');
+                } else if (filter === 'accepted') {
+                    filteredResponses = myResponses.filter(r => r.status === 'in_progress');
+                } else if (filter === 'completed') {
+                    filteredResponses = myResponses.filter(r => r.status === 'completed');
+                }
+
+                // Отображаем
+                if (filteredResponses.length === 0) {
+                    responsesList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>Нет откликов</h3>
+                            <p style="color: var(--text-soft); margin-bottom: 24px;">Вы ещё не откликались на заказы в этом разделе</p>
+                            <a href="index.html" class="btn">
+                                <i class="fas fa-search"></i> Найти заказы
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Рендерим отклики
+                responsesList.innerHTML = '';
+                filteredResponses.forEach(item => {
+                    responsesList.appendChild(createResponseCard(item));
+                });
+                
+            } catch (error) {
+                console.error('Ошибка загрузки откликов:', error);
+                responsesList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">Ошибка загрузки. Обновите страницу.</div>';
+            }
+        }
+
+        // ───── СОЗДАНИЕ КАРТОЧКИ ОТКЛИКА ─────
+        function createResponseCard(item) {
+            const div = document.createElement('div');
+            div.className = 'response-item';
+            
+            const order = item.orderData;
+            const response = item.response;
+            
+            // Дата отклика
+            const responseDate = response.createdAt ? 
+                response.createdAt.toDate().toLocaleDateString('ru-RU') : 
+                'сегодня';
+            
+            // Статус
+            let statusClass = '';
+            let statusText = '';
+            if (item.status === 'open') {
+                statusClass = 'status-open';
+                statusText = '⏳ Ожидает ответа клиента';
+            } else if (item.status === 'in_progress') {
+                statusClass = 'status-progress';
+                statusText = '🔨 Заказ в работе';
+            } else if (item.status === 'completed') {
+                statusClass = 'status-completed';
+                statusText = '✅ Заказ выполнен';
+            }
+            
+            // Фото
+            let photosHtml = '';
+            if (order.photos && order.photos.length > 0) {
+                photosHtml = '<div class="order-photos">';
+                order.photos.slice(0, 4).forEach(url => {
+                    photosHtml += `<img src="${url}" class="order-photo" onclick="window.open('${url}')">`;
+                });
+                if (order.photos.length > 4) {
+                    photosHtml += `<span style="display: flex; align-items: center; padding: 0 12px; color: var(--text-soft);">+${order.photos.length - 4}</span>`;
+                }
+                photosHtml += '</div>';
+            }
+            
+            // Отзыв клиента (если есть)
+            let reviewHtml = '';
+            if (order.reviews && order.reviews.length > 0) {
+                const review = order.reviews.find(r => r.masterId === currentUser.uid);
+                if (review) {
+                    const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                    reviewHtml = `
+                        <div style="margin-top: 20px; padding: 16px; background: white; border-radius: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: 600;">Отзыв клиента</span>
+                                <span style="color: #FFD700;">${stars}</span>
+                            </div>
+                            <p style="color: var(--text-dark);">${review.text || 'Без комментария'}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            const html = `
+                <div class="response-header">
+                    <div>
+                        <span class="order-title">${order.title || 'Заказ'}</span>
+                        <span class="order-category">${order.category || 'Без категории'}</span>
+                    </div>
+                    <div>
+                        <span class="my-price">${response.price} ₽</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                <div class="order-desc">
+                    <i class="fas fa-quote-right" style="color: var(--accent); opacity: 0.5; margin-right: 8px;"></i>
+                    ${order.description || 'Нет описания'}
+                </div>
+                
+                ${photosHtml}
+                
+                <div class="order-meta">
+                    <span><i class="fas fa-user"></i> ${order.clientName || 'Клиент'}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}</span>
+                    <span><i class="fas fa-tag"></i> Бюджет: ${order.price} ₽</span>
+                    <span><i class="fas fa-calendar"></i> Отклик: ${responseDate}</span>
+                </div>
+                
+                <div style="background: white; padding: 16px; border-radius: 12px; margin: 16px 0;">
+                    <p style="color: var(--text-dark);">
+                        <i class="fas fa-comment" style="color: var(--accent); margin-right: 8px;"></i>
+                        ${response.comment || 'Без комментария'}
+                    </p>
+                </div>
+                
+                ${reviewHtml}
+                
+                <div class="action-buttons">
+                    <button onclick="openChat('${item.orderId}', '${order.clientId}')" class="btn">
+                        <i class="fas fa-comment"></i> Чат с клиентом
+                    </button>
+                    
+                    ${item.status === 'open' ? `
+                        <button onclick="showPaymentModal('${item.orderId}', '${currentUser.uid}', ${response.price})" class="btn-outline">
+                            <i class="fas fa-credit-card"></i> Предложить оплату
+                        </button>
+                    ` : ''}
+                    
+                    ${item.status === 'in_progress' ? `
+                        <button onclick="completeOrder('${item.orderId}')" class="btn-success">
+                            <i class="fas fa-check-double"></i> Заказ выполнен
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            div.innerHTML = html;
+            return div;
+        }
+
+        // ───── ОБНОВЛЕНИЕ СТАТИСТИКИ ─────
+        function updateStats(responses) {
+            const total = responses.length;
+            const accepted = responses.filter(r => r.status === 'in_progress' || r.status === 'completed').length;
+            const completed = responses.filter(r => r.status === 'completed').length;
+            
+            document.getElementById('statResponses').innerText = total;
+            document.getElementById('statAccepted').innerText = accepted;
+            document.getElementById('statCompleted').innerText = completed;
+            
+            const conversion = total > 0 ? Math.round((accepted / total) * 100) : 0;
+            document.getElementById('conversionRate').innerText = `${conversion}%`;
+            document.getElementById('conversionBar').style.width = `${conversion}%`;
+        }
+
+        // ───── ОТКРЫТЬ ЧАТ ─────
+        window.openChat = function(orderId, clientId) {
+            window.location.href = `chat.html?orderId=${orderId}&masterId=${currentUser.uid}`;
+        };
+
+        // ───── ЗАВЕРШИТЬ ЗАКАЗ ─────
+        window.completeOrder = async function(orderId) {
+            if (!confirm('Подтвердите, что заказ выполнен. Клиент сможет оставить отзыв.')) return;
+            
+            try {
+                await db.collection('orders').doc(orderId).update({
+                    status: 'completed'
+                });
+                
+                showNotification('✅ Заказ отмечен как выполненный!');
+                loadMasterResponses(document.querySelector('.filter-tab.active').dataset.filter);
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при завершении заказа');
+            }
+        };
+
+        // ───── УВЕДОМЛЕНИЯ ─────
+        function startNotificationListener() {
+            // Проверяем новые заказы каждые 30 секунд
+            const lastCheck = localStorage.getItem('lastNotificationCheck') || 0;
+            localStorage.setItem('lastNotificationCheck', Date.now());
+            
+            setInterval(async () => {
+                try {
+                    const snapshot = await db.collection('orders')
+                        .where('status', '==', 'open')
+                        .orderBy('createdAt', 'desc')
+                        .limit(1)
+                        .get();
+                    
+                    if (!snapshot.empty) {
+                        const lastOrder = snapshot.docs[0].data();
+                        const orderTime = lastOrder.createdAt?.toDate().getTime() || 0;
+                        const lastCheckTime = parseInt(localStorage.getItem('lastNotificationCheck') || '0');
+                        
+                        if (orderTime > lastCheckTime) {
+                            showNotification(`🔔 Новый заказ: ${lastOrder.title || 'Ремонтные работы'}`);
+                            localStorage.setItem('lastNotificationCheck', Date.now());
+                        }
+                    }
+                } catch (error) {
+                    console.error('Ошибка проверки уведомлений:', error);
+                }
+            }, 30000);
+        }
+
+        // ───── ПОКАЗАТЬ УВЕДОМЛЕНИЕ ─────
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-bell" style="color: var(--accent); font-size: 20px;"></i>
+                    <span style="font-weight: 500;">${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // ───── РЕДАКТИРОВАНИЕ ПРОФИЛЯ ─────
+        document.getElementById('editProfileBtn').addEventListener('click', () => {
+            document.getElementById('editName').value = masterData.name || '';
+            document.getElementById('editPhone').value = masterData.phone || '';
+            document.getElementById('editCategories').value = masterData.categories || 'Сантехника, Электрика';
+            document.getElementById('editProfileModal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelEditBtn').addEventListener('click', () => {
+            document.getElementById('editProfileModal').classList.add('hidden');
+        });
+
+        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+            const name = document.getElementById('editName').value;
+            const phone = document.getElementById('editPhone').value;
+            const categories = document.getElementById('editCategories').value;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    name: name,
+                    phone: phone,
+                    categories: categories
+                });
+                
+                masterData = { ...masterData, name, phone, categories };
+                loadMasterData();
+                document.getElementById('editProfileModal').classList.add('hidden');
+                showNotification('✅ Профиль обновлён');
+            } catch (error) {
+                console.error('Ошибка обновления:', error);
+                alert('Ошибка при сохранении');
+            }
+        });
+
+        // ───── ОБРАБОТЧИКИ ФИЛЬТРОВ ─────
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const filter = this.dataset.filter;
+                loadMasterResponses(filter);
+            });
+        });
+
+        // ───── ВЫХОД ─────
+        document.getElementById('logoutLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        });
+
+        // ───── ЗАГРУЗКА ПРИ СТАРТЕ ─────
+        window.showPaymentModal = function(orderId, masterId, amount) {
+            alert(`💳 Демо-режим: Предложение оплаты на сумму ${amount} ₽ отправлено клиенту.`);
+        };
+    </script>
+</body>
+</html>
