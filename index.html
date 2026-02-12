@@ -5,25 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>РемонтПросто — биржа заказов</title>
     <style>
-        /* Все стили остаются как были */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', sans-serif;
         }
-        
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
-        
         header {
             background: white;
             border-radius: 15px;
@@ -34,7 +30,6 @@
             justify-content: space-between;
             align-items: center;
         }
-        
         .logo {
             font-size: 28px;
             font-weight: 800;
@@ -43,11 +38,9 @@
             align-items: center;
             gap: 10px;
         }
-        
         .logo span {
             color: #0984e3;
         }
-        
         nav a {
             margin-left: 25px;
             text-decoration: none;
@@ -55,42 +48,35 @@
             font-weight: 500;
             transition: 0.3s;
         }
-        
         nav a:hover {
             color: #0984e3;
         }
-        
         .hero {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 40px;
             margin-bottom: 40px;
         }
-        
         .form-card, .orders-card {
             background: white;
             border-radius: 15px;
             padding: 35px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
-        
         h2 {
             color: #2d3436;
             margin-bottom: 25px;
             font-size: 24px;
         }
-        
         .form-group {
             margin-bottom: 20px;
         }
-        
         label {
             display: block;
             margin-bottom: 8px;
             color: #636e72;
             font-weight: 500;
         }
-        
         input, select, textarea {
             width: 100%;
             padding: 14px;
@@ -99,17 +85,14 @@
             font-size: 16px;
             transition: 0.3s;
         }
-        
         input:focus, select:focus, textarea:focus {
             border-color: #0984e3;
             outline: none;
         }
-        
         textarea {
             min-height: 120px;
             resize: vertical;
         }
-        
         .btn {
             background: #0984e3;
             color: white;
@@ -122,12 +105,10 @@
             transition: 0.3s;
             width: 100%;
         }
-        
         .btn:hover {
             background: #0770c4;
             transform: translateY(-2px);
         }
-        
         .order-item {
             background: #f8f9fa;
             border-radius: 10px;
@@ -135,33 +116,27 @@
             margin-bottom: 15px;
             border-left: 5px solid #0984e3;
         }
-        
         .order-header {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
         }
-        
         .order-title {
             font-weight: 700;
             color: #2d3436;
         }
-        
         .order-price {
             color: #00b894;
             font-weight: 700;
         }
-        
         .order-desc {
             color: #636e72;
             margin-bottom: 10px;
         }
-        
         .order-contact {
             color: #0984e3;
             font-size: 14px;
         }
-        
         .order-category {
             display: inline-block;
             background: #dfe6e9;
@@ -171,11 +146,9 @@
             color: #2d3436;
             margin-top: 10px;
         }
-        
         .hidden {
             display: none;
         }
-        
         #successMessage {
             background: #00b894;
             color: white;
@@ -185,21 +158,17 @@
             margin-top: 20px;
             animation: fadeIn 0.5s;
         }
-        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
         .master-btn {
             background: #00b894;
             margin-top: 10px;
         }
-        
         .master-btn:hover {
             background: #00a085;
         }
-        
         footer {
             text-align: center;
             margin-top: 40px;
@@ -217,7 +186,7 @@
             <nav>
                 <a href="#form">Оставить заявку</a>
                 <a href="#orders">Заказы</a>
-                <a href="#" id="masterLink">Вход для мастеров</a>
+                <a href="masters.html">Мастерам</a>  <!-- ← ПРЯМАЯ ССЫЛКА -->
             </nav>
         </header>
         
@@ -279,25 +248,7 @@
             <div class="orders-card">
                 <h2 id="orders">📋 Последние заявки:</h2>
                 <div id="ordersList">
-                    <div class="order-item">
-                        <div class="order-header">
-                            <div class="order-title">Установить душевую кабину</div>
-                            <div class="order-price">7500 ₽</div>
-                        </div>
-                        <div class="order-desc">Нужно подключить воду и канализацию в новой кабине. Санузел подготовлен.</div>
-                        <div class="order-contact">👤 Антон, +7 (912) 345-67-89</div>
-                        <div class="order-category">🚿 Сантехника</div>
-                    </div>
-                    
-                    <div class="order-item">
-                        <div class="order-header">
-                            <div class="order-title">Укладка ламината 18 м²</div>
-                            <div class="order-price">12000 ₽</div>
-                        </div>
-                        <div class="order-desc">Помещение без мебели, есть подложка. Нужно занести материал (2 этаж).</div>
-                        <div class="order-contact">👤 Мария, +7 (987) 654-32-10</div>
-                        <div class="order-category">🛠️ Отделочные работы</div>
-                    </div>
+                    <!-- Заявки подгрузятся -->
                 </div>
                 
                 <button class="btn master-btn" id="refreshBtn">🔄 Обновить список</button>
@@ -306,16 +257,14 @@
         
         <footer>
             <p>© 2023 РемонтПросто — биржа заказов для мастеров</p>
-            <p>Для мастеров: чтобы получить доступ ко всем заявкам, зарегистрируйтесь по телефону +7 (999) 123-45-67</p>
+            <p>Для мастеров: перейдите на страницу <a href="masters.html">Мастерам</a></p>
         </footer>
     </div>
-    
+
     <script>
-        // Имитация базы данных в localStorage
         document.addEventListener('DOMContentLoaded', function() {
             loadOrders();
             
-            // Обработка формы
             document.getElementById('orderForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
@@ -332,34 +281,20 @@
                     status: 'new'
                 };
                 
-                // Сохраняем в localStorage
                 let orders = JSON.parse(localStorage.getItem('repairOrders')) || [];
                 orders.unshift(order);
                 localStorage.setItem('repairOrders', JSON.stringify(orders));
                 
-                // Показываем сообщение об успехе
                 document.getElementById('successMessage').classList.remove('hidden');
-                
-                // Очищаем форму
                 document.getElementById('orderForm').reset();
-                
-                // Обновляем список
                 loadOrders();
                 
-                // Скрываем сообщение через 5 секунд
                 setTimeout(() => {
                     document.getElementById('successMessage').classList.add('hidden');
                 }, 5000);
             });
             
-            // Кнопка обновления
             document.getElementById('refreshBtn').addEventListener('click', loadOrders);
-            
-            // Вход для мастеров
-            document.getElementById('masterLink').addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('Вход для мастеров в разработке. Покажите этот код: "MASTER2023"');
-            });
         });
         
         function loadOrders() {
@@ -372,8 +307,7 @@
             }
             
             ordersList.innerHTML = '';
-            
-            orders.forEach(order => {
+            orders.slice(0, 5).forEach(order => {
                 const orderElement = document.createElement('div');
                 orderElement.className = 'order-item';
                 orderElement.innerHTML = `
@@ -385,7 +319,6 @@
                     <div class="order-contact">👤 ${order.clientName}, ${order.phone} (${order.district})</div>
                     <div class="order-category">${order.category}</div>
                 `;
-                
                 ordersList.appendChild(orderElement);
             });
         }
