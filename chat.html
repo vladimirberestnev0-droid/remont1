@@ -265,6 +265,7 @@
         let currentUser = null;
         let chatId = null;
         let orderData = null;
+        let unsubscribe = null;
 
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
@@ -286,57 +287,79 @@
         });
 
         async function loadOrderData() {
-            const orderDoc = await db.collection('orders').doc(orderId).get();
-            if (!orderDoc.exists) {
-                alert('Заказ не найден');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            orderData = { id: orderDoc.id, ...orderDoc.data() };
-            
-            let partnerId, partnerName, partnerRole;
-            
-            if (orderData.clientId === currentUser.uid) {
-                partnerId = masterId;
-                partnerRole = 'Мастер';
-                
-                const masterDoc = await db.collection('users').doc(masterId).get();
-                if (masterDoc.exists) {
-                    partnerName = masterDoc.data().name || 'Мастер';
+            try {
+                const orderDoc = await db.collection('orders').doc(orderId).get();
+                if (!orderDoc.exists) {
+                    alert('Заказ не найден');
+                    window.location.href = 'index.html';
+                    return;
                 }
-            } else {
-                partnerId = orderData.clientId;
-                partnerRole = 'Клиент';
-                partnerName = orderData.clientName || 'Клиент';
-            }
 
-            document.getElementById('chatPartnerName').innerText = partnerName || 'Пользователь';
-            document.getElementById('chatPartnerRole').innerText = partnerRole;
-            document.getElementById('orderInfo').innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || ''} ₽`;
-            
-            chatId = `chat_${orderId}_${partnerId}`;
+                orderData = { id: orderDoc.id, ...orderDoc.data() };
+                
+                let partnerId, partnerName, partnerRole;
+                
+                if (orderData.clientId === currentUser.uid) {
+                    // Текущий пользователь - клиент
+                    partnerId = masterId;
+                    partnerRole = 'Мастер';
+                    
+                    const masterDoc = await db.collection('users').doc(masterId).get();
+                    if (masterDoc.exists) {
+                        partnerName = masterDoc.data().name || 'Мастер';
+                    } else {
+                        partnerName = 'Мастер';
+                    }
+                    
+                    chatId = `chat_${orderId}_${partnerId}`;
+                } else {
+                    // Текущий пользователь - мастер
+                    partnerId = orderData.clientId;
+                    partnerRole = 'Клиент';
+                    partnerName = orderData.clientName || 'Клиент';
+                    chatId = `chat_${orderId}_${currentUser.uid}`;
+                }
+
+                document.getElementById('chatPartnerName').innerText = partnerName || 'Пользователь';
+                document.getElementById('chatPartnerRole').innerText = partnerRole;
+                document.getElementById('orderInfo').innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки заказа:', error);
+                alert('Ошибка загрузки данных заказа');
+            }
         }
 
         async function initializeChat() {
-            const chatRef = db.collection('chats').doc(chatId);
-            const chatDoc = await chatRef.get();
-            
-            if (!chatDoc.exists) {
-                await chatRef.set({
-                    orderId: orderId,
-                    clientId: orderData.clientId,
-                    masterId: masterId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+            try {
+                const chatRef = db.collection('chats').doc(chatId);
+                const chatDoc = await chatRef.get();
+                
+                if (!chatDoc.exists) {
+                    await chatRef.set({
+                        orderId: orderId,
+                        clientId: orderData.clientId,
+                        masterId: masterId,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log('Чат создан:', chatId);
+                }
+            } catch (error) {
+                console.error('Ошибка инициализации чата:', error);
             }
         }
 
         function listenToMessages() {
+            if (!chatId) return;
+            
             const messagesArea = document.getElementById('messagesArea');
             
-            db.collection('chats').doc(chatId)
+            if (unsubscribe) {
+                unsubscribe();
+            }
+            
+            unsubscribe = db.collection('chats').doc(chatId)
                 .collection('messages')
                 .orderBy('timestamp', 'asc')
                 .onSnapshot((snapshot) => {
@@ -358,31 +381,55 @@
                         messagesArea.appendChild(messageElement);
                     });
                     
-                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                    // Скролл вниз
+                    setTimeout(() => {
+                        messagesArea.scrollTop = messagesArea.scrollHeight;
+                    }, 100);
+                }, (error) => {
+                    console.error('Ошибка загрузки сообщений:', error);
+                    messagesArea.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #E67A4B;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Ошибка загрузки чата. Проверьте правила Firestore.</p>
+                        </div>
+                    `;
                 });
         }
 
         function createMessageElement(message) {
             const div = document.createElement('div');
-            div.className = `message ${message.senderId === currentUser.uid ? 'sent' : 'received'}`;
+            div.className = `message ${message.senderId === currentUser?.uid ? 'sent' : 'received'}`;
             
             const time = message.timestamp 
-                ? message.timestamp.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                ? new Date(message.timestamp.toDate()).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
                 : 'только что';
             
             div.innerHTML = `
-                <div class="message-bubble">${message.text}</div>
+                <div class="message-bubble">${escapeHtml(message.text) || '...'}</div>
                 <div class="message-time">${time}</div>
             `;
             
             return div;
         }
 
+        // Защита от XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             
-            if (!text || !chatId) return;
+            if (!text || !chatId || !currentUser) return;
             
             try {
                 await db.collection('chats').doc(chatId)
@@ -402,7 +449,7 @@
                 input.value = '';
             } catch (error) {
                 console.error('Ошибка отправки:', error);
-                alert('Не удалось отправить сообщение');
+                alert('Не удалось отправить сообщение. Проверьте правила Firestore.');
             }
         }
 
@@ -411,6 +458,13 @@
             if (e.key === 'Enter') {
                 e.preventDefault();
                 sendMessage();
+            }
+        });
+
+        // Отписка при уходе со страницы
+        window.addEventListener('beforeunload', () => {
+            if (unsubscribe) {
+                unsubscribe();
             }
         });
     </script>
