@@ -1,0 +1,16 @@
+{
+  "name": "ВоркХом - заказы для мастеров",
+  "short_name": "ВоркХом",
+  "start_url": "/remont1/",
+  "display": "standalone",
+  "background_color": "#F9F7F5",
+  "theme_color": "#1E2B3C",
+  "icons": [
+    {
+      "src": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
