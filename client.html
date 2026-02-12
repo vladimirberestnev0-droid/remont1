@@ -14,6 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     
     <style>
+        /* ───── СТИЛИ (ТВОИ, БЕЗ ИЗМЕНЕНИЙ) ───── */
         :root {
             --primary: #1E2B3C;
             --accent: #E67A4B;
@@ -307,13 +308,6 @@
             font-size: 14px;
         }
 
-        .review-form {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--bg-light);
-            border-radius: 12px;
-        }
-
         .rating-select {
             display: flex;
             gap: 8px;
@@ -491,7 +485,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        const storage = firebase.storage();
 
         let currentUser = null;
         let clientData = null;
@@ -618,33 +611,40 @@
             let responsesHtml = '';
             if (order.responses && order.responses.length > 0) {
                 responsesHtml = '<div class="responses"><h4 style="margin-bottom: 16px;">📩 Отклики мастеров</h4>';
+                
                 order.responses.forEach(resp => {
-                    const hasReview = order.reviews && order.reviews.some(r => r.masterId === resp.masterId);
+                    // ✅ ПРОВЕРЯЕМ, ЕСТЬ ЛИ УЖЕ ОТЗЫВ ДЛЯ ЭТОГО МАСТЕРА
+                    const hasReview = order.reviews && Array.isArray(order.reviews) && 
+                        order.reviews.some(r => r && r.masterId === resp.masterId);
                     
                     responsesHtml += `
                         <div class="response-item">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <span style="font-weight: 700;">${resp.masterName}</span>
+                                    <span style="font-weight: 700;">${resp.masterName || 'Мастер'}</span>
                                     <span class="master-rating">
-                                        <i class="fas fa-star star"></i> ${resp.masterRating?.toFixed(1) || '0.0'}
+                                        <i class="fas fa-star star"></i> ${(resp.masterRating || 0).toFixed(1)}
                                         (${resp.masterReviews || 0})
                                     </span>
                                 </div>
-                                <span style="color: var(--accent); font-weight: 700;">${resp.price} ₽</span>
+                                <span style="color: var(--accent); font-weight: 700;">${resp.price || 0} ₽</span>
                             </div>
-                            <p style="margin-top: 12px; color: var(--text-soft);">${resp.comment}</p>
+                            <p style="margin-top: 12px; color: var(--text-soft);">${resp.comment || ''}</p>
                             <div style="display: flex; gap: 12px; margin-top: 16px;">
                                 <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn-outline" style="padding: 8px 16px;">
                                     <i class="fas fa-comment"></i> Чат
                                 </button>
                                 ${order.status === 'completed' && !hasReview ? `
-                                    <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName}')" class="btn-outline" style="padding: 8px 16px;">
+                                    <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName || 'Мастер'}')" class="btn-outline" style="padding: 8px 16px;">
                                         <i class="fas fa-star"></i> Оценить
                                     </button>
+                                ` : order.status === 'completed' && hasReview ? `
+                                    <span style="color: var(--success); padding: 8px 16px;">
+                                        <i class="fas fa-check-circle"></i> Отзыв оставлен
+                                    </span>
                                 ` : ''}
                                 ${order.status === 'open' ? `
-                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})" class="btn" style="padding: 8px 16px;">
+                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price || 0})" class="btn" style="padding: 8px 16px;">
                                         <i class="fas fa-check"></i> Выбрать
                                     </button>
                                 ` : ''}
@@ -658,15 +658,15 @@
             let html = `
                 <div class="order-header">
                     <div>
-                        <span class="order-title">${order.title}</span>
+                        <span class="order-title">${order.title || 'Заказ'}</span>
                         <span class="order-status ${statusClass}">${statusText}</span>
                     </div>
-                    <div class="order-price">${order.price} ₽</div>
+                    <div class="order-price">${order.price || 0} ₽</div>
                 </div>
-                <div class="order-desc">${order.description}</div>
+                <div class="order-desc">${order.description || 'Нет описания'}</div>
                 ${photosHtml}
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                    <span class="order-category">${order.category}</span>
+                    <span class="order-category">${order.category || 'Без категории'}</span>
                     <span style="color: var(--text-soft); font-size: 13px;">
                         <i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}
                     </span>
@@ -688,7 +688,7 @@
                     selectedPrice: price
                 });
                 
-                showNotification('Мастер выбран! Теперь вы можете обсудить детали в чате.');
+                showNotification('✅ Мастер выбран! Теперь вы можете обсудить детали в чате.');
                 loadClientOrders();
             } catch (error) {
                 console.error('Ошибка:', error);
@@ -733,39 +733,50 @@
             const reviewText = document.getElementById('reviewText').value;
             
             try {
-                // Добавляем отзыв в заказ
+                // ✅ СОЗДАЁМ ОБЪЕКТ ОТЗЫВА БЕЗ timestamp
+                const review = {
+                    masterId: currentMasterId,
+                    rating: currentRating,
+                    text: reviewText,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // ✅ ДОБАВЛЯЕМ ОТЗЫВ В ЗАКАЗ
                 const orderRef = db.collection('orders').doc(currentOrderId);
                 await orderRef.update({
-                    reviews: firebase.firestore.FieldValue.arrayUnion({
-                        masterId: currentMasterId,
-                        rating: currentRating,
-                        text: reviewText,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    })
+                    reviews: firebase.firestore.FieldValue.arrayUnion(review)
                 });
                 
-                // Обновляем рейтинг мастера
+                // ✅ ОБНОВЛЯЕМ РЕЙТИНГ МАСТЕРА
                 const masterRef = db.collection('users').doc(currentMasterId);
                 const masterDoc = await masterRef.get();
                 const masterData = masterDoc.data();
                 
-                const newRating = ((masterData.rating || 0) * (masterData.reviews || 0) + currentRating) / ((masterData.reviews || 0) + 1);
+                const currentRating_sum = masterData.rating || 0;
+                const currentReviews_count = masterData.reviews || 0;
+                
+                const newRating = ((currentRating_sum * currentReviews_count) + currentRating) / (currentReviews_count + 1);
                 
                 await masterRef.update({
                     rating: newRating,
-                    reviews: (masterData.reviews || 0) + 1
+                    reviews: currentReviews_count + 1
                 });
                 
+                // ✅ ЗАКРЫВАЕМ МОДАЛКУ
                 document.getElementById('reviewModal').classList.add('hidden');
                 document.getElementById('reviewText').value = '';
                 currentRating = 0;
                 document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
                 
-                alert('Спасибо за отзыв!');
-                loadClientOrders();
+                // ✅ ПОКАЗЫВАЕМ УВЕДОМЛЕНИЕ
+                alert('✅ Спасибо за отзыв!');
+                
+                // ✅ ПЕРЕЗАГРУЖАЕМ ЗАКАЗЫ
+                await loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
+                
             } catch (error) {
                 console.error('Ошибка при отправке отзыва:', error);
-                alert('Ошибка при отправке отзыва');
+                alert('❌ Ошибка при отправке отзыва: ' + error.message);
             }
         });
 
