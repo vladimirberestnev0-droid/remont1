@@ -5,17 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Кабинет мастера</title>
     
-    <!-- Google Fonts & Font Awesome -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia:ital@1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
     <style>
-        /* ───── БРЕНД ВОРКХОМ (ТЕ ЖЕ ЦВЕТА, ЧТО И НА ГЛАВНОЙ) ───── */
         :root {
             --primary: #1E2B3C;
             --accent: #E67A4B;
@@ -36,7 +33,6 @@
         body {
             background: var(--bg-light);
             color: var(--text-dark);
-            line-height: 1.6;
             padding: 20px;
             animation: fadeSlide 0.6s ease-out;
         }
@@ -51,7 +47,6 @@
             margin: 0 auto;
         }
 
-        /* ───── ШАПКА ───── */
         header {
             background: var(--white);
             border-radius: 24px;
@@ -108,7 +103,6 @@
             color: var(--accent);
         }
 
-        /* ───── КАРТОЧКИ ───── */
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -116,7 +110,7 @@
             margin-bottom: 30px;
         }
 
-        .profile-card, .stats-card, .orders-card, .responses-card {
+        .profile-card, .stats-card, .responses-card {
             background: var(--white);
             border-radius: 24px;
             padding: 32px;
@@ -282,6 +276,26 @@
             color: #00A86B;
         }
 
+        .chat-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-btn:hover {
+            background: #D45C2F;
+            transform: translateY(-2px);
+        }
+
         .btn {
             background: var(--accent);
             color: white;
@@ -306,14 +320,6 @@
             background: transparent;
             color: var(--primary);
             border: 1px solid var(--border);
-        }
-
-        .btn-outline:hover {
-            background: var(--bg-light);
-            color: var(--accent);
-            border-color: var(--accent);
-            box-shadow: none;
-            transform: none;
         }
 
         .empty-state {
@@ -350,7 +356,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- ШАПКА -->
         <header>
             <div class="brand">
                 <div class="logo">
@@ -366,7 +371,6 @@
             </nav>
         </header>
 
-        <!-- БЛОК АВТОРИЗАЦИИ (ЕСЛИ НЕ ВОШЁЛ) -->
         <div id="authRequired" class="auth-card" style="text-align: center; padding: 60px; margin-bottom: 40px;">
             <i class="fas fa-user-shield" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
             <h2 style="margin-bottom: 16px;">Вход в кабинет мастера</h2>
@@ -374,11 +378,8 @@
             <a href="index.html" class="btn" style="width: auto; padding: 14px 40px;">Перейти на главную и войти</a>
         </div>
 
-        <!-- ОСНОВНОЙ КАБИНЕТ (ПОКАЗЫВАЕМ ТОЛЬКО ДЛЯ МАСТЕРОВ) -->
         <div id="masterCabinet" class="hidden">
-            <!-- ШАПКА КАБИНЕТА С ПРОФИЛЕМ И СТАТИСТИКОЙ -->
             <div class="dashboard">
-                <!-- КАРТОЧКА ПРОФИЛЯ -->
                 <div class="profile-card">
                     <div class="avatar">
                         <i class="fas fa-user-tie"></i>
@@ -399,10 +400,6 @@
                             <i class="fas fa-calendar"></i>
                             <span id="masterSince">На платформе с 2025</span>
                         </div>
-                        <div class="info-row">
-                            <i class="fas fa-tag"></i>
-                            <span id="masterCategories">Сантехника, Электрика</span>
-                        </div>
                     </div>
 
                     <div style="margin-top: 24px;">
@@ -410,7 +407,6 @@
                     </div>
                 </div>
 
-                <!-- КАРТОЧКА СТАТИСТИКИ -->
                 <div class="stats-card">
                     <h2>📊 Моя статистика</h2>
                     <div class="stats-grid">
@@ -438,7 +434,6 @@
                     </div>
                 </div>
 
-                <!-- ИСТОРИЯ ОТКЛИКОВ -->
                 <div class="responses-card" style="grid-column: 1 / -1;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2>📨 Мои отклики на заказы</h2>
@@ -450,9 +445,7 @@
                         </div>
                     </div>
                     
-                    <div id="responsesList">
-                        <!-- Сюда загрузятся отклики мастера -->
-                    </div>
+                    <div id="responsesList"></div>
                 </div>
             </div>
         </div>
@@ -463,18 +456,15 @@
     </div>
 
     <script>
-        // ───── ТВОЙ FIREBASE КОНФИГ ─────
         const firebaseConfig = {
             apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
             authDomain: "homework-6a562.firebaseapp.com",
             projectId: "homework-6a562",
             storageBucket: "homework-6a562.firebasestorage.app",
             messagingSenderId: "3651366285",
-            appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4",
-            measurementId: "G-C79PZ7FDYH"
+            appId: "1:3651366285:web:8b1a73dfdf717eb582e1c4"
         };
 
-        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
@@ -483,7 +473,6 @@
         let currentUserRole = null;
         let masterData = null;
 
-        // ───── ПРОВЕРКА АВТОРИЗАЦИИ ─────
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
@@ -493,13 +482,11 @@
                     currentUserRole = userDoc.data().role;
                     masterData = userDoc.data();
                     
-                    // Показываем кабинет только если роль - мастер
                     if (currentUserRole === 'master') {
                         showMasterCabinet();
                         loadMasterData();
                         loadMasterResponses();
                     } else {
-                        // Если клиент - показываем ошибку
                         document.getElementById('authRequired').style.display = 'block';
                         document.getElementById('authRequired').innerHTML = `
                             <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
@@ -511,19 +498,16 @@
                     }
                 }
             } else {
-                // Не авторизован
                 document.getElementById('authRequired').style.display = 'block';
                 document.getElementById('masterCabinet').classList.add('hidden');
             }
         });
 
-        // ───── ПОКАЗАТЬ КАБИНЕТ МАСТЕРА ─────
         function showMasterCabinet() {
             document.getElementById('authRequired').style.display = 'none';
             document.getElementById('masterCabinet').classList.remove('hidden');
         }
 
-        // ───── ЗАГРУЗИТЬ ДАННЫЕ МАСТЕРА ─────
         async function loadMasterData() {
             if (!masterData) return;
             
@@ -531,17 +515,12 @@
             document.getElementById('masterEmail').innerText = masterData.email || '';
             document.getElementById('masterPhone').innerText = masterData.phone || 'Телефон не указан';
             
-            // Категории (пока заглушка)
-            document.getElementById('masterCategories').innerHTML = 'Сантехника, Электрика, Отделка';
-            
-            // Дата регистрации
             if (masterData.createdAt) {
                 const date = masterData.createdAt.toDate();
                 document.getElementById('masterSince').innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
             }
         }
 
-        // ───── ЗАГРУЗИТЬ ОТКЛИКИ МАСТЕРА ─────
         async function loadMasterResponses(filter = 'all') {
             if (!currentUser) return;
             
@@ -549,7 +528,6 @@
             responsesList.innerHTML = '<div style="text-align: center; padding: 40px;">Загрузка откликов...</div>';
             
             try {
-                // Получаем ВСЕ заявки, где есть отклики этого мастера
                 const ordersSnapshot = await db.collection('orders')
                     .orderBy('createdAt', 'desc')
                     .get();
@@ -559,7 +537,6 @@
                 ordersSnapshot.forEach(doc => {
                     const order = { id: doc.id, ...doc.data() };
                     if (order.responses && Array.isArray(order.responses)) {
-                        // Ищем отклики этого мастера
                         const myResponse = order.responses.find(r => r.masterId === currentUser.uid);
                         if (myResponse) {
                             myResponses.push({
@@ -570,6 +547,7 @@
                                 clientPhone: order.clientPhone,
                                 district: order.district,
                                 category: order.category,
+                                clientId: order.clientId,
                                 response: myResponse,
                                 status: order.status || 'open',
                                 createdAt: order.createdAt
@@ -578,10 +556,8 @@
                     }
                 });
 
-                // Обновляем статистику
                 updateStats(myResponses);
 
-                // Фильтруем
                 let filteredResponses = myResponses;
                 if (filter === 'pending') {
                     filteredResponses = myResponses.filter(r => r.status === 'open');
@@ -603,15 +579,44 @@
                     return;
                 }
 
-                // Отображаем отклики
                 responsesList.innerHTML = '';
                 filteredResponses.forEach(item => {
                     const responseDate = item.response.createdAt ? item.response.createdAt.toDate().toLocaleDateString('ru-RU') : 'сегодня';
                     
                     let statusBadge = '';
-                    if (item.status === 'open') statusBadge = '<span class="status-badge">Ожидает ответа</span>';
-                    else if (item.status === 'in_progress') statusBadge = '<span class="status-badge" style="background: #E3F2FD; color: #0984e3;">Принят клиентом</span>';
-                    else if (item.status === 'completed') statusBadge = '<span class="status-badge completed">Выполнен</span>';
+                    let actionButtons = '';
+                    
+                    if (item.status === 'open') {
+                        statusBadge = '<span class="status-badge">Ожидает ответа</span>';
+                        actionButtons = `
+                            <div style="margin-top: 16px; display: flex; gap: 12px;">
+                                <span style="background: #FFE8E0; padding: 8px 16px; border-radius: 40px; font-size: 13px;">
+                                    ⏳ Клиент ещё выбирает
+                                </span>
+                                <button onclick="openChat('${item.orderId}', '${item.clientId}')" class="chat-btn">
+                                    <i class="fas fa-comment"></i> Чат с клиентом
+                                </button>
+                            </div>
+                        `;
+                    } else if (item.status === 'in_progress') {
+                        statusBadge = '<span class="status-badge" style="background: #E3F2FD; color: #0984e3;">Принят клиентом</span>';
+                        actionButtons = `
+                            <div style="margin-top: 16px;">
+                                <button onclick="openChat('${item.orderId}', '${item.clientId}')" class="chat-btn">
+                                    <i class="fas fa-comment"></i> Перейти в чат
+                                </button>
+                            </div>
+                        `;
+                    } else if (item.status === 'completed') {
+                        statusBadge = '<span class="status-badge completed">Выполнен</span>';
+                        actionButtons = `
+                            <div style="margin-top: 16px;">
+                                <button onclick="openChat('${item.orderId}', '${item.clientId}')" class="btn-outline" style="padding: 8px 20px;">
+                                    <i class="fas fa-comment"></i> История переписки
+                                </button>
+                            </div>
+                        `;
+                    }
                     
                     const responseHtml = `
                         <div class="response-item">
@@ -640,13 +645,7 @@
                                 <span><i class="fas fa-calendar"></i> Отклик: ${responseDate}</span>
                             </div>
                             
-                            ${item.status === 'open' ? `
-                                <div style="margin-top: 16px;">
-                                    <span style="background: #FFE8E0; padding: 8px 16px; border-radius: 40px; font-size: 13px;">
-                                        ⏳ Клиент ещё выбирает
-                                    </span>
-                                </div>
-                            ` : ''}
+                            ${actionButtons}
                         </div>
                     `;
                     responsesList.innerHTML += responseHtml;
@@ -658,7 +657,6 @@
             }
         }
 
-        // ───── ОБНОВИТЬ СТАТИСТИКУ ─────
         function updateStats(responses) {
             const total = responses.length;
             const accepted = responses.filter(r => r.status === 'in_progress' || r.status === 'completed').length;
@@ -673,7 +671,10 @@
             document.getElementById('conversionBar').style.width = `${conversion}%`;
         }
 
-        // ───── ФИЛЬТРЫ ─────
+        window.openChat = function(orderId, clientId) {
+            window.location.href = `chat.html?orderId=${orderId}&masterId=${currentUser.uid}`;
+        };
+
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -683,7 +684,6 @@
             });
         });
 
-        // ───── ВЫХОД ─────
         document.getElementById('logoutLink').addEventListener('click', (e) => {
             e.preventDefault();
             auth.signOut().then(() => {
