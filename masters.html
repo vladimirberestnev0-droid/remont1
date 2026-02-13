@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     
     <style>
         :root {
@@ -345,6 +345,47 @@
             border-color: var(--accent);
         }
 
+        .category-filter-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        .category-filter-title {
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-filter-title i {
+            color: var(--accent);
+        }
+
+        .category-filter-btn {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .category-filter-btn:hover,
+        .category-filter-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
         .response-item {
             background: var(--bg-light);
             border-radius: 20px;
@@ -422,28 +463,6 @@
             background: white;
             padding: 16px;
             border-radius: 16px;
-        }
-
-        .order-photos {
-            display: flex;
-            gap: 12px;
-            margin: 16px 0;
-            flex-wrap: wrap;
-        }
-
-        .order-photo {
-            width: 80px;
-            height: 80px;
-            border-radius: 12px;
-            object-fit: cover;
-            cursor: pointer;
-            border: 2px solid var(--white);
-            transition: 0.2s;
-        }
-
-        .order-photo:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
 
         .order-meta {
@@ -551,6 +570,20 @@
             display: none !important;
         }
 
+        .notification-permission {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            border-left: 4px solid var(--accent);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            z-index: 10000;
+            animation: slideIn 0.3s;
+            max-width: 350px;
+        }
+
         @media (max-width: 1000px) {
             .dashboard { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -564,7 +597,6 @@
             .responses-header { flex-direction: column; align-items: flex-start; }
         }
 
-        /* Скелетоны */
         .skeleton-item {
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
             background-size: 200% 100%;
@@ -651,12 +683,9 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 24px; display: flex; gap: 12px;">
-                        <a href="index.html" class="btn" style="flex: 1;">
-                            <i class="fas fa-search"></i> Найти заказы
-                        </a>
-                        <button id="editProfileBtn" class="btn-outline" style="flex: 0.5;">
-                            <i class="fas fa-edit"></i>
+                    <div style="margin-top: 24px;">
+                        <button id="editProfileBtn" class="btn" style="width: 100%;">
+                            <i class="fas fa-edit"></i> Редактировать профиль
                         </button>
                     </div>
                 </div>
@@ -775,11 +804,87 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        let messaging = null;
+        
+        try {
+            messaging = firebase.messaging();
+        } catch (e) {
+            console.log('FCM не поддерживается');
+        }
 
         let currentUser = null;
         let currentUserRole = null;
         let masterData = null;
         let allResponses = [];
+
+        // ========== РЕГИСТРАЦИЯ SERVICE WORKER ==========
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log('Service Worker зарегистрирован:', registration);
+                })
+                .catch((error) => {
+                    console.log('Ошибка регистрации Service Worker:', error);
+                });
+        }
+
+        // ========== ЗАПРОС УВЕДОМЛЕНИЙ ==========
+        async function requestNotificationPermission() {
+            if (!messaging) return;
+            
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await messaging.getToken();
+                    
+                    if (currentUser) {
+                        await db.collection('users').doc(currentUser.uid).update({
+                            fcmToken: token
+                        });
+                    }
+                    
+                    showNotification('✅ Уведомления включены!');
+                }
+            } catch (error) {
+                console.log('Ошибка получения токена:', error);
+            }
+        }
+
+        // ========== СЛУШАТЕЛЬ УВЕДОМЛЕНИЙ ==========
+        function setupNotifications() {
+            if (!messaging) return;
+            
+            messaging.onMessage((payload) => {
+                console.log('Получено уведомление:', payload);
+                
+                const notification = new Notification(payload.notification?.title || 'ВоркХом', {
+                    body: payload.notification?.body || '',
+                    icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg',
+                    badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg',
+                    data: payload.data
+                });
+                
+                notification.onclick = function() {
+                    if (payload.data?.url) {
+                        window.open(payload.data.url, '_blank');
+                    }
+                };
+            });
+        }
+
+        // ========== ПОКАЗ УВЕДОМЛЕНИЯ ==========
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification-permission';
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-bell" style="color: var(--accent); font-size: 20px;"></i>
+                    <span style="font-weight: 500;">${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
 
         function forceCloseModal() {
             const modal = document.getElementById('editProfileModal');
@@ -804,7 +909,12 @@
                             showMasterCabinet();
                             loadMasterData();
                             await loadMasterResponses();
-                            startNotificationListener();
+                            setupNotifications();
+                            
+                            // Запрашиваем уведомления если нет токена
+                            if (!userDoc.data().fcmToken && Notification.permission !== 'denied') {
+                                setTimeout(requestNotificationPermission, 2000);
+                            }
                         } else {
                             showAccessDenied();
                         }
@@ -840,20 +950,6 @@
                 <a href="index.html" class="btn" style="width: auto; padding: 14px 40px;">
                     <i class="fas fa-home"></i> На главную
                 </a>
-            `;
-            document.getElementById('masterCabinet').classList.add('hidden');
-            forceCloseModal();
-        }
-
-        function showError(message) {
-            document.getElementById('authRequired').style.display = 'block';
-            document.getElementById('authRequired').innerHTML = `
-                <i class="fas fa-exclamation-circle" style="font-size: 72px; color: var(--accent); margin-bottom: 24px;"></i>
-                <h2 style="margin-bottom: 16px;">Ошибка</h2>
-                <p style="color: var(--text-soft); margin-bottom: 28px;">${message}</p>
-                <button onclick="location.reload()" class="btn" style="width: auto; padding: 14px 40px;">
-                    <i class="fas fa-sync-alt"></i> Обновить страницу
-                </button>
             `;
             document.getElementById('masterCabinet').classList.add('hidden');
             forceCloseModal();
@@ -906,6 +1002,7 @@
             starsElement.innerHTML = stars;
         }
 
+        // ========== ЗАГРУЗКА ОТКЛИКОВ ==========
         async function loadMasterResponses(filter = 'all') {
             if (!currentUser) return;
             
@@ -962,6 +1059,8 @@
                 }
 
                 responsesList.innerHTML = '';
+                addCategoryFilter();
+                
                 filteredResponses.forEach(item => {
                     responsesList.appendChild(createResponseCard(item));
                 });
@@ -970,6 +1069,64 @@
                 console.error('Ошибка загрузки откликов:', error);
                 responsesList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">Ошибка загрузки. Обновите страницу.</div>';
             }
+        }
+
+        // ========== ФИЛЬТР ПО КАТЕГОРИЯМ ==========
+        function addCategoryFilter() {
+            const oldFilter = document.querySelector('.category-filter-panel');
+            if (oldFilter) oldFilter.remove();
+            
+            if (!masterData || !masterData.categories) return;
+            
+            const masterCategories = masterData.categories
+                .split(',')
+                .map(c => c.trim())
+                .filter(c => c);
+            
+            if (masterCategories.length === 0) return;
+            
+            const filterPanel = document.createElement('div');
+            filterPanel.className = 'category-filter-panel';
+            
+            filterPanel.innerHTML = `
+                <span class="category-filter-title">
+                    <i class="fas fa-filter"></i> Мои категории:
+                </span>
+                <button class="category-filter-btn active" data-category="all">Все заказы</button>
+                ${masterCategories.map(cat => 
+                    `<button class="category-filter-btn" data-category="${cat}">${cat}</button>`
+                ).join('')}
+            `;
+            
+            const responsesList = document.getElementById('responsesList');
+            responsesList.parentNode.insertBefore(filterPanel, responsesList);
+            
+            document.querySelectorAll('.category-filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const category = this.dataset.category;
+                    filterOrdersByCategory(category);
+                });
+            });
+        }
+
+        function filterOrdersByCategory(category) {
+            const orderCards = document.querySelectorAll('.response-item');
+            
+            orderCards.forEach(card => {
+                if (category === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    const cardCategory = card.querySelector('.order-category')?.innerText || '';
+                    if (cardCategory.includes(category)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
         }
 
         function createResponseCard(item) {
@@ -994,18 +1151,6 @@
             } else if (item.status === 'completed') {
                 statusClass = 'status-completed';
                 statusText = '✅ Заказ выполнен';
-            }
-            
-            let photosHtml = '';
-            if (order.photos && order.photos.length > 0) {
-                photosHtml = '<div class="order-photos">';
-                order.photos.slice(0, 4).forEach(url => {
-                    photosHtml += `<img src="${url}" class="order-photo" onclick="window.open('${url}')">`;
-                });
-                if (order.photos.length > 4) {
-                    photosHtml += `<span style="display: flex; align-items: center; padding: 0 12px; color: var(--text-soft);">+${order.photos.length - 4}</span>`;
-                }
-                photosHtml += '</div>';
             }
             
             let reviewHtml = '';
@@ -1045,8 +1190,6 @@
                     ${order.description || 'Нет описания'}
                 </div>
                 
-                ${photosHtml}
-                
                 <div class="order-meta">
                     <span><i class="fas fa-user"></i> ${order.clientName || 'Клиент'}</span>
                     <span><i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}</span>
@@ -1067,12 +1210,6 @@
                     <button onclick="openChat('${item.orderId}', '${order.clientId}')" class="btn">
                         <i class="fas fa-comment"></i> Чат с клиентом
                     </button>
-                    
-                    ${item.status === 'open' ? `
-                        <button onclick="showPaymentModal('${item.orderId}', '${currentUser.uid}', ${response.price})" class="btn-outline">
-                            <i class="fas fa-credit-card"></i> Предложить оплату
-                        </button>
-                    ` : ''}
                     
                     ${item.status === 'in_progress' ? `
                         <button onclick="completeOrder('${item.orderId}')" class="btn-success">
@@ -1120,65 +1257,6 @@
             }
         };
 
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-bell" style="color: var(--accent); font-size: 20px;"></i>
-                    <span style="font-weight: 500;">${message}</span>
-                </div>
-            `;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
-        // ========== УВЕДОМЛЕНИЯ ==========
-        function startNotificationListener() {
-            if (!('Notification' in window)) return;
-            
-            async function requestNotif() {
-                if (Notification.permission === 'granted') return;
-                if (Notification.permission !== 'denied') {
-                    await Notification.requestPermission();
-                }
-            }
-            
-            requestNotif();
-            
-            setInterval(async () => {
-                if (!currentUser) return;
-                
-                try {
-                    const snapshot = await db.collection('orders')
-                        .where('status', '==', 'open')
-                        .orderBy('createdAt', 'desc')
-                        .limit(1)
-                        .get();
-                    
-                    if (snapshot.empty) return;
-                    
-                    const lastOrder = snapshot.docs[0].data();
-                    const lastCheck = localStorage.getItem('lastNotifCheck') || '0';
-                    
-                    if (lastOrder.createdAt && lastOrder.createdAt.toDate().getTime() > parseInt(lastCheck)) {
-                        if (Notification.permission === 'granted') {
-                            new Notification('🔔 Новый заказ!', {
-                                body: `${lastOrder.title || 'Ремонт'} · ${lastOrder.price || 0} ₽`,
-                                icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg'
-                            });
-                        }
-                        localStorage.setItem('lastNotifCheck', Date.now().toString());
-                    }
-                } catch (error) {
-                    console.error('Ошибка проверки уведомлений:', error);
-                }
-            }, 30000);
-        }
-
         // ========== РЕДАКТИРОВАНИЕ ==========
         document.getElementById('editProfileBtn').addEventListener('click', () => {
             document.getElementById('editName').value = masterData.name || '';
@@ -1208,6 +1286,8 @@
                 loadMasterData();
                 forceCloseModal();
                 showNotification('✅ Профиль обновлён');
+                addCategoryFilter();
+                
             } catch (error) {
                 console.error('Ошибка обновления:', error);
                 alert('Ошибка при сохранении');
@@ -1232,60 +1312,75 @@
             });
         });
 
-        window.showPaymentModal = function(orderId, masterId, amount) {
-            alert(`💳 Демо-режим: Предложение оплаты на сумму ${amount} ₽ отправлено клиенту.`);
-        };
-
         window.addEventListener('load', forceCloseModal);
         document.addEventListener('DOMContentLoaded', forceCloseModal);
     </script>
-    <!-- ===== РЕЙТИНГ ЧЕСТНОСТИ ===== -->
-<script>
-(function() {
-    // Ждем загрузки данных
-    const checkData = setInterval(() => {
-        if (window.masterData) {
-            clearInterval(checkData);
+    
+    <!-- ===== ТЕМНАЯ ТЕМА ===== -->
+    <style>
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(230,122,75,0.3);
+            z-index: 9999;
+            transition: 0.3s;
+            border: none;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+        body.dark-theme {
+            background: #1a1a1a !important;
+            color: #e0e0e0 !important;
+        }
+        body.dark-theme .bg-white,
+        body.dark-theme .bg-light,
+        body.dark-theme .profile-card,
+        body.dark-theme .stats-card,
+        body.dark-theme .responses-card,
+        body.dark-theme header,
+        body.dark-theme .response-item {
+            background: #2d2d2d !important;
+            color: #e0e0e0 !important;
+            border-color: #404040 !important;
+        }
+    </style>
+
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            body.classList.toggle('dark-theme');
             
-            // Считаем рейтинг
-            const data = window.masterData;
-            let honesty = 5.0;
-            
-            // Отмены
-            if (data.cancellations) honesty -= data.cancellations * 0.5;
-            
-            // Отзывы
-            const reviews = data.reviews || 0;
-            if (reviews > 50) honesty += 1.0;
-            else if (reviews > 20) honesty += 0.5;
-            else if (reviews > 10) honesty += 0.3;
-            
-            // Рейтинг
-            const rating = data.rating || 0;
-            if (rating < 4) honesty -= (4 - rating);
-            
-            honesty = Math.min(5, Math.max(1, honesty.toFixed(1)));
-            
-            // Бейдж
-            let badge = '';
-            if (honesty >= 4.8) badge = '🏆 СУПЕР-МАСТЕР';
-            else if (honesty >= 4.5) badge = '⭐ НАДЁЖНЫЙ';
-            else if (honesty >= 4.0) badge = '✅ ПРОВЕРЕННЫЙ';
-            else if (honesty >= 3.5) badge = '🟡 НОРМАЛЬНЫЙ';
-            else badge = '⚠️ НИЗКИЙ РЕЙТИНГ';
-            
-            // Добавляем в профиль
-            const ratingDiv = document.querySelector('.rating-badge');
-            if (ratingDiv) {
-                const honestyDiv = document.createElement('div');
-                honestyDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #1E2B3C; border-radius: 40px; text-align: center;';
-                honestyDiv.innerHTML = `<span style="color: white; font-size: 13px;">${badge} · Честность: ${honesty}/5</span>`;
-                ratingDiv.appendChild(honestyDiv);
+            if (body.classList.contains('dark-theme')) {
+                icon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
             }
         }
-    }, 1000);
-})();
-</script>
-<!-- ===== КОНЕЦ РЕЙТИНГА ===== -->
+        
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+            document.getElementById('themeIcon').className = 'fas fa-sun';
+        }
+    </script>
 </body>
 </html>

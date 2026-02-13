@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Мои заказы</title>
     
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Firebase -->
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     
     <style>
         body { background: #F9F7F5; }
@@ -34,11 +33,35 @@
             cursor: pointer;
         }
         .rating-star.active { color: #FFD700; }
+        
+        .favorite-btn {
+            color: #FFB020;
+            cursor: pointer;
+            font-size: 20px;
+            transition: 0.2s;
+        }
+        .favorite-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .master-card {
+            background: var(--bg-light);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
     </style>
 </head>
 <body class="bg-light">
     <div class="container py-4">
-        <!-- ШАПКА -->
         <header class="bg-white rounded-4 p-4 mb-4 d-flex justify-content-between align-items-center shadow-sm">
             <div class="d-flex align-items-center gap-3">
                 <i class="fas fa-house fs-1" style="color: #E67A4B;"></i>
@@ -47,12 +70,12 @@
             <nav class="d-flex gap-4">
                 <a href="index.html" class="text-decoration-none text-secondary">Главная</a>
                 <a href="client.html" class="text-decoration-none" style="color: #E67A4B;">Мои заказы</a>
+                <a href="#" id="favoritesTab" class="text-decoration-none text-secondary">⭐ Избранное</a>
                 <a href="index.html" class="text-decoration-none text-secondary">➕ Создать заявку</a>
                 <a href="#" id="logoutLink" class="text-decoration-none text-secondary">Выйти</a>
             </nav>
         </header>
 
-        <!-- БЛОК АВТОРИЗАЦИИ - ПРОСТАЯ ССЫЛКА, БЕЗ FIREBASEUI -->
         <div id="authRequired" class="bg-white rounded-4 p-5 text-center shadow-sm">
             <i class="fas fa-user-circle fa-4x mb-3" style="color: #E67A4B;"></i>
             <h3 class="mb-3">Вход в кабинет клиента</h3>
@@ -62,10 +85,8 @@
             </a>
         </div>
 
-        <!-- КАБИНЕТ КЛИЕНТА -->
         <div id="clientCabinet" class="d-none">
             <div class="row g-4">
-                <!-- ПРОФИЛЬ -->
                 <div class="col-md-4">
                     <div class="bg-white rounded-4 p-4 shadow-sm">
                         <div class="text-center">
@@ -82,26 +103,48 @@
                     </div>
                 </div>
 
-                <!-- ЗАКАЗЫ -->
                 <div class="col-md-8">
                     <div class="bg-white rounded-4 p-4 shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3 class="mb-0">📋 Мои заказы</h3>
-                            <div class="btn-group">
-                                <button class="btn btn-outline-secondary rounded-pill filter-tab active" data-filter="all">Все</button>
-                                <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="open">Активные</button>
-                                <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="in_progress">В работе</button>
-                                <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="completed">Выполнены</button>
-                            </div>
+                        <div class="d-flex gap-2 mb-4">
+                            <button class="btn rounded-pill tab-btn active" data-tab="orders" style="background: #E67A4B; color: white;">
+                                📋 Мои заказы
+                            </button>
+                            <button class="btn btn-outline-secondary rounded-pill tab-btn" data-tab="favorites">
+                                ⭐ Избранные мастера
+                            </button>
+                            <button class="btn btn-outline-secondary rounded-pill tab-btn" data-tab="history">
+                                🕐 История
+                            </button>
                         </div>
-                        <div id="ordersList"></div>
+                        
+                        <div id="ordersTab" class="tab-content active">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h3 class="mb-0">📋 Мои заказы</h3>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-secondary rounded-pill filter-tab active" data-filter="all">Все</button>
+                                    <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="open">Активные</button>
+                                    <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="in_progress">В работе</button>
+                                    <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="completed">Выполнены</button>
+                                </div>
+                            </div>
+                            <div id="ordersList"></div>
+                        </div>
+                        
+                        <div id="favoritesTab" class="tab-content">
+                            <h3 class="mb-4">⭐ Избранные мастера</h3>
+                            <div id="favoritesList"></div>
+                        </div>
+                        
+                        <div id="historyTab" class="tab-content">
+                            <h3 class="mb-4">🕐 История просмотров</h3>
+                            <div id="historyList"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- МОДАЛКА ОТЗЫВА -->
     <div class="modal fade" id="reviewModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -128,7 +171,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -151,7 +193,6 @@
         let currentMasterId = null;
         let reviewModal = null;
 
-        // ========== АВТОРИЗАЦИЯ ==========
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
@@ -160,7 +201,6 @@
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     
-                    // Только для клиентов показываем кабинет
                     if (userData.role === 'client') {
                         document.getElementById('authRequired').classList.add('d-none');
                         document.getElementById('clientCabinet').classList.remove('d-none');
@@ -169,8 +209,9 @@
                         document.getElementById('clientEmail').innerText = userData.email || '';
                         
                         loadClientOrders('all');
+                        loadFavorites();
+                        loadHistory();
                     } else {
-                        // Если мастер зашел сюда - редирект
                         window.location.href = 'masters.html';
                     }
                 }
@@ -180,7 +221,24 @@
             }
         });
 
-        // ========== ЗАГРУЗКА ЗАКАЗОВ КЛИЕНТА ==========
+        // ========== ТАБЫ ==========
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'transparent';
+                    b.style.color = '#6c757d';
+                });
+                this.classList.add('active');
+                this.style.background = '#E67A4B';
+                this.style.color = 'white';
+                
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
+
+        // ========== ЗАГРУЗКА ЗАКАЗОВ ==========
         async function loadClientOrders(filter) {
             if (!currentUser) return;
             
@@ -211,7 +269,6 @@
                     orders.push({ id: doc.id, ...doc.data() });
                 });
 
-                // СОРТИРУЕМ ВРУЧНУЮ (новые сверху)
                 orders.sort((a, b) => {
                     if (a.createdAt && b.createdAt) {
                         return b.createdAt.seconds - a.createdAt.seconds;
@@ -219,7 +276,6 @@
                     return 0;
                 });
 
-                // Фильтрация по статусу
                 if (filter !== 'all') {
                     orders = orders.filter(o => o.status === filter);
                 }
@@ -232,6 +288,126 @@
             } catch (error) {
                 console.error('❌ Ошибка загрузки заказов:', error);
                 ordersList.innerHTML = `<div class="text-center p-5 text-danger">❌ Ошибка загрузки. Проверьте правила Firestore.</div>`;
+            }
+        }
+
+        // ========== ЗАГРУЗКА ИЗБРАННОГО ==========
+        async function loadFavorites() {
+            if (!currentUser) return;
+            
+            const favoritesList = document.getElementById('favoritesList');
+            
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                const favorites = userDoc.data().favorites || [];
+                
+                if (favorites.length === 0) {
+                    favoritesList.innerHTML = `
+                        <div class="text-center p-5 text-secondary">
+                            <i class="fas fa-star fa-3x mb-3"></i>
+                            <h4>Нет избранных мастеров</h4>
+                            <p>Добавляйте мастеров в избранное после заказов</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                favoritesList.innerHTML = '';
+                
+                for (const masterId of favorites) {
+                    const masterDoc = await db.collection('users').doc(masterId).get();
+                    if (masterDoc.exists) {
+                        const master = masterDoc.data();
+                        
+                        const card = document.createElement('div');
+                        card.className = 'master-card';
+                        card.innerHTML = `
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>${master.name || 'Мастер'}</h5>
+                                    <p class="text-secondary mb-2">${master.categories || 'Специалист'}</p>
+                                    <div class="mb-2">
+                                        <span class="text-warning">${'★'.repeat(Math.floor(master.rating || 0))}${'☆'.repeat(5 - Math.floor(master.rating || 0))}</span>
+                                        <span class="text-secondary ms-2">${master.reviews || 0} отзывов</span>
+                                    </div>
+                                    <p><i class="fas fa-phone me-2"></i>${master.phone || 'Телефон не указан'}</p>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-danger rounded-pill" onclick="removeFromFavorites('${masterId}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        favoritesList.appendChild(card);
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки избранного:', error);
+            }
+        }
+
+        // ========== УДАЛЕНИЕ ИЗ ИЗБРАННОГО ==========
+        window.removeFromFavorites = async function(masterId) {
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    favorites: firebase.firestore.FieldValue.arrayRemove(masterId)
+                });
+                loadFavorites();
+                alert('❌ Мастер удален из избранного');
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        };
+
+        // ========== ЗАГРУЗКА ИСТОРИИ ==========
+        async function loadHistory() {
+            if (!currentUser) return;
+            
+            const historyList = document.getElementById('historyList');
+            
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                const viewedOrders = userDoc.data().viewedOrders || [];
+                
+                if (viewedOrders.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="text-center p-5 text-secondary">
+                            <i class="fas fa-history fa-3x mb-3"></i>
+                            <h4>История просмотров пуста</h4>
+                            <p>Здесь будут отображаться просмотренные заказы</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                historyList.innerHTML = '';
+                
+                const sortedViews = viewedOrders.sort((a, b) => 
+                    new Date(b.viewedAt) - new Date(a.viewedAt)
+                ).slice(0, 20);
+                
+                for (const view of sortedViews) {
+                    const orderDoc = await db.collection('orders').doc(view.orderId).get();
+                    if (orderDoc.exists) {
+                        const order = orderDoc.data();
+                        
+                        const item = document.createElement('div');
+                        item.className = 'bg-light rounded-4 p-3 mb-2';
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${order.title || 'Заказ'}</h6>
+                                    <small class="text-secondary">${order.price || 0} ₽ · ${order.category || ''}</small>
+                                </div>
+                                <small class="text-secondary">${new Date(view.viewedAt).toLocaleDateString()}</small>
+                            </div>
+                        `;
+                        historyList.appendChild(item);
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
             }
         }
 
@@ -271,7 +447,10 @@
                                         ⭐ ${(resp.masterRating || 0).toFixed(1)} (${resp.masterReviews || 0})
                                     </span>
                                 </div>
-                                <span class="fw-bold" style="color: #E67A4B;">${resp.price || 0} ₽</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold" style="color: #E67A4B;">${resp.price || 0} ₽</span>
+                                    <i class="fas fa-star favorite-btn" onclick="toggleFavoriteFromOrder('${resp.masterId}')" style="color: ${(currentUser && window.favorites?.includes(resp.masterId)) ? '#FFB020' : '#ddd'};"></i>
+                                </div>
                             </div>
                             <p class="text-secondary mb-3">${resp.comment || ''}</p>
                             <div class="d-flex gap-2">
@@ -326,11 +505,61 @@
                         <i class="fas fa-map-marker-alt me-1"></i>${order.address || 'Адрес не указан'}
                     </small>
                 </div>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="showQRCode('${order.id}', '${order.title}')">
+                        <i class="fas fa-qrcode"></i> QR-код
+                    </button>
+                </div>
                 ${responsesHtml}
             `;
             
             return div;
         }
+
+        // ========== ДОБАВЛЕНИЕ В ИЗБРАННОЕ ИЗ ЗАКАЗА ==========
+        window.toggleFavoriteFromOrder = async function(masterId) {
+            if (!currentUser) return;
+            
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const userDoc = await userRef.get();
+                const favorites = userDoc.data().favorites || [];
+                
+                if (favorites.includes(masterId)) {
+                    await userRef.update({
+                        favorites: firebase.firestore.FieldValue.arrayRemove(masterId)
+                    });
+                } else {
+                    await userRef.update({
+                        favorites: firebase.firestore.FieldValue.arrayUnion(masterId)
+                    });
+                }
+                
+                // Обновляем текущую вкладку
+                const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+                if (activeTab === 'orders') {
+                    loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
+                } else if (activeTab === 'favorites') {
+                    loadFavorites();
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        };
+
+        // ========== ПОКАЗ QR-КОДА ==========
+        window.showQRCode = function(orderId, orderTitle) {
+            const qrDiv = document.createElement('div');
+            qrDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 10000; text-align: center;';
+            
+            // Создаем QR код через API
+            qrDiv.innerHTML = `
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://workhom.ru/order/${orderId}" style="width: 200px; height: 200px;">
+                <p class="mt-3">${orderTitle}</p>
+                <button class="btn btn-secondary rounded-pill mt-2" onclick="this.parentElement.remove()">Закрыть</button>
+            `;
+            document.body.appendChild(qrDiv);
+        };
 
         // ========== ВЫБОР МАСТЕРА ==========
         window.selectMaster = async function(orderId, masterId, price) {
@@ -343,6 +572,16 @@
                     selectedPrice: price
                 });
                 
+                // Отправляем уведомление мастеру
+                const masterDoc = await db.collection('users').doc(masterId).get();
+                if (masterDoc.exists && masterDoc.data().fcmToken) {
+                    await sendNotification(masterDoc.data().fcmToken, {
+                        title: '✅ Вас выбрали!',
+                        body: 'Клиент выбрал вас для выполнения заказа',
+                        url: `/masters.html?order=${orderId}`
+                    });
+                }
+                
                 alert('✅ Мастер выбран!');
                 loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
             } catch (error) {
@@ -350,6 +589,32 @@
                 alert('❌ Ошибка при выборе мастера');
             }
         };
+
+        // ========== ОТПРАВКА УВЕДОМЛЕНИЯ ==========
+        async function sendNotification(token, data) {
+            try {
+                await fetch('https://fcm.googleapis.com/fcm/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'key=AAAA_your_server_key_here'
+                    },
+                    body: JSON.stringify({
+                        to: token,
+                        notification: {
+                            title: data.title,
+                            body: data.body,
+                            icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/house.svg'
+                        },
+                        data: {
+                            url: data.url
+                        }
+                    })
+                });
+            } catch (error) {
+                console.log('Ошибка отправки уведомления:', error);
+            }
+        }
 
         // ========== ОТКРЫТЬ ЧАТ ==========
         window.openChat = function(orderId, masterId) {

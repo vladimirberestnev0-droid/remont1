@@ -88,7 +88,6 @@
             margin-left: auto;
         }
 
-        /* Закрепленный заказ */
         .pinned-order {
             background: var(--bg-light);
             padding: 12px 30px;
@@ -170,7 +169,6 @@
             text-align: right;
         }
 
-        /* Быстрые ответы */
         .quick-replies {
             padding: 10px 30px;
             background: var(--white);
@@ -292,7 +290,6 @@
             </div>
         </div>
 
-        <!-- Закрепленный заказ -->
         <div id="pinnedOrder" class="pinned-order hidden">
             <div class="pinned-order-content">
                 <span><i class="fas fa-clipboard-list"></i> <span id="pinnedTitle"></span></span>
@@ -313,7 +310,6 @@
             собеседник печатает...
         </div>
 
-        <!-- Быстрые ответы -->
         <div id="quickReplies" class="quick-replies hidden">
             <div class="quick-replies-buttons">
                 <button class="quick-reply-btn" data-text="✅ Принято! Приступаю">✅ Принято</button>
@@ -375,7 +371,22 @@
             await initializeChat();
             listenToMessages();
             setupTypingIndicator();
+            markMessagesAsRead();
         });
+
+        // ========== ОТМЕТИТЬ СООБЩЕНИЯ КАК ПРОЧИТАННЫЕ ==========
+        async function markMessagesAsRead() {
+            if (!chatId || !currentUser) return;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('lastRead').doc(chatId).set({
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+            } catch (error) {
+                console.log('Ошибка отметки прочтения:', error);
+            }
+        }
 
         async function loadPartnerData(userId) {
             try {
@@ -401,7 +412,6 @@
                 orderData = { id: orderDoc.id, ...orderDoc.data() };
                 
                 if (orderData.clientId === currentUser.uid) {
-                    // Текущий пользователь - клиент
                     partnerId = masterId;
                     partnerRole = 'Мастер';
                     
@@ -415,7 +425,6 @@
                     
                     chatId = `chat_${orderId}_${partnerId}`;
                 } else {
-                    // Текущий пользователь - мастер
                     partnerId = orderData.clientId;
                     partnerRole = 'Клиент';
                     
@@ -429,7 +438,6 @@
                 document.getElementById('chatPartnerRole').innerText = partnerRole;
                 document.getElementById('orderInfo').innerHTML = `📋 ${orderData.title || 'Заказ'} · ${orderData.price || 0} ₽`;
                 
-                // Показываем закрепленный заказ
                 const pinnedOrder = document.getElementById('pinnedOrder');
                 if (pinnedOrder && orderData) {
                     document.getElementById('pinnedTitle').innerText = orderData.title || 'Заказ';
@@ -438,7 +446,6 @@
                     pinnedOrder.classList.remove('hidden');
                 }
                 
-                // Показываем быстрые ответы
                 const quickReplies = document.getElementById('quickReplies');
                 if (quickReplies && orderData) {
                     quickReplies.classList.remove('hidden');
@@ -503,6 +510,7 @@
                     
                     setTimeout(() => {
                         messagesArea.scrollTop = messagesArea.scrollHeight;
+                        markMessagesAsRead();
                     }, 100);
                 }, (error) => {
                     console.error('Ошибка загрузки сообщений:', error);
@@ -623,7 +631,6 @@
             }
         }
 
-        // ========== БЫСТРЫЕ ОТВЕТЫ ==========
         document.querySelectorAll('.quick-reply-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 let text = this.dataset.text;
@@ -652,101 +659,5 @@
             }
         });
     </script>
-    <!-- ===== ЧАТ-БОТ ПОМОЩНИК ===== -->
-<script>
-(function() {
-    // База ответов
-    const botReplies = {
-        'цена': '💰 Текущая цена заказа: [price] ₽',
-        'сколько стоит': '💰 Бюджет: [price] ₽',
-        'когда': '🕐 Мастер ответит в течение часа',
-        'где': '📍 Адрес: [address]',
-        'адрес': '📍 Адрес заказа: [address]',
-        'срочно': '⚡ Отмечено как срочное!',
-        'спасибо': '😊 Пожалуйста!',
-        'пока': '👋 До связи!',
-        'работа': '🔨 Мастер знает задачу',
-        'привет': '👋 Здравствуйте!'
-    };
-
-    // Перехватываем отправку
-    const originalSend = window.sendMessage;
-    if (originalSend) {
-        window.sendMessage = async function() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            
-            // Проверяем ответ бота
-            if (text && window.orderData) {
-                for (let [word, reply] of Object.entries(botReplies)) {
-                    if (text.toLowerCase().includes(word)) {
-                        reply = reply
-                            .replace('[price]', window.orderData.price || '0')
-                            .replace('[address]', window.orderData.address || 'не указан');
-                        
-                        if (confirm(`🤖 Бот может ответить:\n"${reply}"\n\nОтправить?`)) {
-                            input.value = reply;
-                            await originalSend();
-                            input.value = text;
-                            return;
-                        }
-                        break;
-                    }
-                }
-            }
-            return originalSend();
-        };
-    }
-
-    // Кнопки-подсказки над чатом
-    const quickContainer = document.createElement('div');
-    quickContainer.style.cssText = 'padding: 10px 30px; display: flex; gap: 8px; flex-wrap: wrap; background: var(--white); border-top: 1px solid var(--border);';
-    quickContainer.innerHTML = `
-        <button class="ai-quick-btn" data-text="💰 Сколько стоит?">💰 Цена</button>
-        <button class="ai-quick-btn" data-text="📍 Какой адрес?">📍 Адрес</button>
-        <button class="ai-quick-btn" data-text="🕐 Когда приедете?">🕐 Время</button>
-        <button class="ai-quick-btn" data-text="✅ Принято!">✅ Принято</button>
-    `;
-
-    // Стили для кнопок
-    const style = document.createElement('style');
-    style.textContent = `
-        .ai-quick-btn {
-            background: #F9F7F5;
-            border: 1px solid #E2E8F0;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .ai-quick-btn:hover {
-            background: #E67A4B;
-            color: white;
-            border-color: #E67A4B;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Вставляем после pinnedOrder
-    setTimeout(() => {
-        const pinned = document.getElementById('pinnedOrder');
-        if (pinned && pinned.nextSibling) {
-            pinned.parentNode.insertBefore(quickContainer, pinned.nextSibling);
-        } else {
-            document.querySelector('.messages-area')?.before(quickContainer);
-        }
-
-        // Обработка кнопок
-        document.querySelectorAll('.ai-quick-btn').forEach(btn => {
-            btn.onclick = function() {
-                document.getElementById('messageInput').value = this.dataset.text;
-                document.getElementById('messageInput').focus();
-            };
-        });
-    }, 2000);
-})();
-</script>
-<!-- ===== КОНЕЦ ЧАТ-БОТА ===== -->
 </body>
 </html>
