@@ -52,12 +52,14 @@
             </nav>
         </header>
 
-        <!-- БЛОК АВТОРИЗАЦИИ -->
+        <!-- БЛОК АВТОРИЗАЦИИ - ПРОСТАЯ ССЫЛКА, БЕЗ FIREBASEUI -->
         <div id="authRequired" class="bg-white rounded-4 p-5 text-center shadow-sm">
             <i class="fas fa-user-circle fa-4x mb-3" style="color: #E67A4B;"></i>
             <h3 class="mb-3">Вход в кабинет клиента</h3>
             <p class="text-secondary mb-4">Пожалуйста, войдите, чтобы увидеть ваши заказы</p>
-            <a href="index.html" class="btn px-5 py-2 rounded-pill" style="background: #E67A4B; color: white;">Перейти на главную</a>
+            <a href="index.html" class="btn px-5 py-2 rounded-pill" style="background: #E67A4B; color: white;">
+                <i class="fas fa-sign-in-alt me-2"></i>Перейти на главную и войти
+            </a>
         </div>
 
         <!-- КАБИНЕТ КЛИЕНТА -->
@@ -149,41 +151,33 @@
         let currentMasterId = null;
         let reviewModal = null;
 
-        // ========== ПРИНУДИТЕЛЬНОЕ ЗАКРЫТИЕ МОДАЛКИ ==========
-        function forceCloseReviewModal() {
-            if (reviewModal) {
-                reviewModal.hide();
-            }
-            currentRating = 0;
-            currentOrderId = null;
-            currentMasterId = null;
-            document.getElementById('reviewText').value = '';
-            document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
-        }
-
         // ========== АВТОРИЗАЦИЯ ==========
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
             if (user) {
                 const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists && userDoc.data().role === 'client') {
-                    // ПОКАЗЫВАЕМ КАБИНЕТ КЛИЕНТА
-                    document.getElementById('authRequired').classList.add('d-none');
-                    document.getElementById('clientCabinet').classList.remove('d-none');
-                    
+                if (userDoc.exists) {
                     const userData = userDoc.data();
-                    document.getElementById('clientName').innerText = userData.name || 'Клиент';
-                    document.getElementById('clientEmail').innerText = userData.email || '';
                     
-                    // ЗАГРУЖАЕМ ЗАКАЗЫ
-                    loadClientOrders('all');
+                    // Только для клиентов показываем кабинет
+                    if (userData.role === 'client') {
+                        document.getElementById('authRequired').classList.add('d-none');
+                        document.getElementById('clientCabinet').classList.remove('d-none');
+                        
+                        document.getElementById('clientName').innerText = userData.name || 'Клиент';
+                        document.getElementById('clientEmail').innerText = userData.email || '';
+                        
+                        loadClientOrders('all');
+                    } else {
+                        // Если мастер зашел сюда - редирект
+                        window.location.href = 'masters.html';
+                    }
                 }
             } else {
                 document.getElementById('authRequired').classList.remove('d-none');
                 document.getElementById('clientCabinet').classList.add('d-none');
             }
-            forceCloseReviewModal();
         });
 
         // ========== ЗАГРУЗКА ЗАКАЗОВ КЛИЕНТА ==========
@@ -194,9 +188,8 @@
             ordersList.innerHTML = '<div class="text-center p-5">Загрузка заказов...</div>';
             
             try {
-                // ✅ ВАЖНО: ИСПРАВЛЕН ЗАПРОС!
                 const snapshot = await db.collection('orders')
-                    .where('clientId', '==', currentUser.uid)  // ТОЛЬКО ЗАКАЗЫ ЭТОГО КЛИЕНТА
+                    .where('clientId', '==', currentUser.uid)
                     .get();
 
                 if (snapshot.empty) {
@@ -218,6 +211,14 @@
                     orders.push({ id: doc.id, ...doc.data() });
                 });
 
+                // СОРТИРУЕМ ВРУЧНУЮ (новые сверху)
+                orders.sort((a, b) => {
+                    if (a.createdAt && b.createdAt) {
+                        return b.createdAt.seconds - a.createdAt.seconds;
+                    }
+                    return 0;
+                });
+
                 // Фильтрация по статусу
                 if (filter !== 'all') {
                     orders = orders.filter(o => o.status === filter);
@@ -230,7 +231,7 @@
                 
             } catch (error) {
                 console.error('❌ Ошибка загрузки заказов:', error);
-                ordersList.innerHTML = `<div class="text-center p-5 text-danger">❌ Ошибка загрузки: ${error.message}</div>`;
+                ordersList.innerHTML = `<div class="text-center p-5 text-danger">❌ Ошибка загрузки. Проверьте правила Firestore.</div>`;
             }
         }
 
@@ -258,8 +259,8 @@
                 responsesHtml = '<div class="mt-4"><h6 class="mb-3">📩 Отклики мастеров</h6>';
                 
                 order.responses.forEach(resp => {
-                    const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
-                    const isSelected = order.selectedMasterId === resp.masterId;
+                    const hasReview = order.reviews?.some(r => r?.masterId === resp?.masterId);
+                    const isSelected = order.selectedMasterId === resp?.masterId;
                     
                     responsesHtml += `
                         <div class="bg-white rounded-4 p-4 mb-3">
@@ -274,12 +275,14 @@
                             </div>
                             <p class="text-secondary mb-3">${resp.comment || ''}</p>
                             <div class="d-flex gap-2">
-                                <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn btn-outline-secondary rounded-pill">
-                                    <i class="fas fa-comment me-2"></i>Чат
-                                </button>
+                                ${resp?.masterId ? `
+                                    <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-comment me-2"></i>Чат
+                                    </button>
+                                ` : ''}
                                 
-                                ${order.status === 'open' && !isSelected ? `
-                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})" class="btn rounded-pill" style="background: #E67A4B; color: white;">
+                                ${order.status === 'open' && !isSelected && resp?.masterId ? `
+                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price || 0})" class="btn rounded-pill" style="background: #E67A4B; color: white;">
                                         <i class="fas fa-check me-2"></i>Выбрать
                                     </button>
                                 ` : ''}
@@ -290,7 +293,7 @@
                                     </span>
                                 ` : ''}
                                 
-                                ${order.status === 'completed' && !hasReview ? `
+                                ${order.status === 'completed' && !hasReview && resp?.masterId ? `
                                     <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName || 'Мастер'}')" class="btn btn-outline-secondary rounded-pill">
                                         <i class="fas fa-star me-2"></i>Оценить
                                     </button>
