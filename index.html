@@ -5,41 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — заказы сами находят мастеров</title>
     
-    <!-- ========== БИБЛИОТЕКИ ========== -->
-    <!-- Bootstrap 5 (ГОТОВЫЙ ДИЗАЙН) -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome (ИКОНКИ) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
     <!-- Яндекс.Карты -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=22f2217d-9d6c-44f6-b96b-94e396067a8e&lang=ru_RU" type="text/javascript"></script>
-    
-    <!-- Firebase SDK -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     
-    <!-- ========== ГОТОВАЯ АВТОРИЗАЦИЯ ========== -->
-    <script src="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css">
-    
     <style>
-        body {
-            background: #F9F7F5;
-        }
+        body { background: #F9F7F5; }
         .order-item {
             border-left: 6px solid #E67A4B;
             transition: 0.2s;
         }
         .order-item:hover {
             background: white !important;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.02);
             transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.02);
         }
-        .status-open { background: #FFE8E0; color: #E67A4B; }
-        .status-progress { background: #E3F2FD; color: #0984e3; }
-        .status-completed { background: #E3F2E9; color: #00A86B; }
+        #map {
+            width: 100%;
+            height: 250px;
+            border-radius: 16px;
+        }
+        #ordersMap {
+            width: 100%;
+            height: 400px;
+            border-radius: 16px;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -51,19 +48,72 @@
                 <span class="fs-2 fw-bold" style="color: #1E2B3C;">ВоркХом</span>
             </div>
             <nav class="d-flex gap-4">
-                <a href="index.html" class="text-decoration-none text-secondary">Главная</a>
+                <a href="index.html" class="text-decoration-none" style="color: #E67A4B;">Главная</a>
                 <a href="client.html" class="text-decoration-none text-secondary">Мои заказы</a>
                 <a href="masters.html" class="text-decoration-none text-secondary">Мастерам</a>
             </nav>
         </header>
 
-        <!-- ========== ГОТОВАЯ АВТОРИЗАЦИЯ ========== -->
-        <div id="firebaseui-auth-container" class="bg-white rounded-4 p-4 mb-4 shadow-sm"></div>
-        <div id="userInfo" class="bg-white rounded-4 p-4 mb-4 shadow-sm d-none">
+        <!-- ТВОЯ РАБОЧАЯ АВТОРИЗАЦИЯ (КОТОРАЯ БЫЛА ИЗНАЧАЛЬНО) -->
+        <div id="authBlock" class="bg-white rounded-4 p-4 mb-4 shadow-sm">
+            <div class="d-flex gap-3 mb-4">
+                <button id="tabLogin" class="btn px-4 py-2 rounded-pill active" style="background: #E67A4B; color: white;">Вход</button>
+                <button id="tabRegister" class="btn btn-outline-secondary px-4 py-2 rounded-pill">Регистрация</button>
+            </div>
+            
+            <!-- ФОРМА ВХОДА -->
+            <div id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Email</label>
+                    <input type="email" id="loginEmail" class="form-control rounded-pill" placeholder="example@mail.com">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Пароль</label>
+                    <input type="password" id="loginPassword" class="form-control rounded-pill" placeholder="••••••••">
+                </div>
+                <button id="loginBtn" class="btn w-100 rounded-pill py-2" style="background: #E67A4B; color: white;">Войти</button>
+                <p id="loginError" class="text-danger mt-3 d-none"></p>
+            </div>
+            
+            <!-- ФОРМА РЕГИСТРАЦИИ -->
+            <div id="registerForm" class="d-none">
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Имя</label>
+                    <input type="text" id="regName" class="form-control rounded-pill" placeholder="Имя">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Email</label>
+                    <input type="email" id="regEmail" class="form-control rounded-pill" placeholder="example@mail.com">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Телефон</label>
+                    <input type="tel" id="regPhone" class="form-control rounded-pill" placeholder="+7 (999) 123-45-67">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Пароль</label>
+                    <input type="password" id="regPassword" class="form-control rounded-pill" placeholder="минимум 6 символов">
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="role" id="roleClient" value="client" checked>
+                        <label class="form-check-label" for="roleClient">Я — клиент</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="role" id="roleMaster" value="master">
+                        <label class="form-check-label" for="roleMaster">Я — мастер</label>
+                    </div>
+                </div>
+                <button id="registerBtn" class="btn w-100 rounded-pill py-2" style="background: #E67A4B; color: white;">Зарегистрироваться</button>
+                <p id="registerError" class="text-danger mt-3 d-none"></p>
+            </div>
+        </div>
+
+        <!-- ИНФО О ПОЛЬЗОВАТЕЛЕ -->
+        <div id="userInfoBlock" class="bg-white rounded-4 p-4 mb-4 shadow-sm d-none">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h5>👤 Вы вошли как <span id="userEmail" class="fw-bold"></span></h5>
-                    <p id="userRole" class="mb-0" style="color: #E67A4B;"></p>
+                    <h5 class="mb-1">👤 Вы вошли как <span id="userEmailDisplay" class="fw-bold"></span></h5>
+                    <p id="userRoleDisplay" class="mb-0" style="color: #E67A4B;"></p>
                 </div>
                 <button id="logoutBtn" class="btn btn-outline-secondary rounded-pill px-4">Выйти</button>
             </div>
@@ -124,7 +174,7 @@
                                     <input type="text" id="longitude" class="form-control rounded-pill" placeholder="Долгота" readonly>
                                 </div>
                             </div>
-                            <div id="map" class="mt-2" style="height: 250px; border-radius: 16px;"></div>
+                            <div id="map" class="mt-2"></div>
                         </div>
                         
                         <div class="mb-3">
@@ -138,9 +188,10 @@
                         </div>
                         
                         <button type="submit" class="btn w-100 rounded-pill py-3" style="background: #E67A4B; color: white;">
-                            <i class="fas fa-paper-plane"></i> Опубликовать заявку
+                            <i class="fas fa-paper-plane me-2"></i>Опубликовать заявку
                         </button>
                     </form>
+                    
                     <div id="successMessage" class="alert alert-success mt-3 d-none">
                         ✅ Заявка создана! Мастера увидят её в течение 5 минут.
                     </div>
@@ -156,7 +207,7 @@
                     </h3>
                     <div id="ordersList"></div>
                     <button id="refreshBtn" class="btn btn-outline-secondary w-100 mt-3 rounded-pill">
-                        <i class="fas fa-sync-alt"></i> Обновить список
+                        <i class="fas fa-sync-alt me-2"></i>Обновить список
                     </button>
                 </div>
             </div>
@@ -168,13 +219,13 @@
                         <i class="fas fa-map-marked-alt" style="color: #E67A4B;"></i>
                         Заявки на карте
                     </h3>
-                    <div id="ordersMap" style="width: 100%; height: 400px; border-radius: 16px;"></div>
+                    <div id="ordersMap"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ========== ГОТОВАЯ МОДАЛКА BOOTSTRAP ========== -->
+    <!-- МОДАЛКА ОПЛАТЫ -->
     <div class="modal fade" id="paymentModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -197,7 +248,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // ========== ТВОЙ FIREBASE КОНФИГ ==========
+        // ========== FIREBASE ==========
         const firebaseConfig = {
             apiKey: "AIzaSyCQrxCTXNBS4sEyR_ElZ3dXRkkK9kEYTTQ",
             authDomain: "homework-6a562.firebaseapp.com",
@@ -217,57 +268,6 @@
         let map = null;
         let ordersMap = null;
         let ymapsReady = false;
-
-        // ========== ГОТОВАЯ АВТОРИЗАЦИЯ FIREBASEUI ==========
-        const ui = new firebaseui.auth.AuthUI(auth);
-        const uiConfig = {
-            signInOptions: [
-                firebase.auth.EmailAuthProvider.PROVIDER_ID
-            ],
-            signInFlow: 'popup',
-            credentialHelper: firebaseui.auth.CredentialHelper.NONE,
-            callbacks: {
-                signInSuccessWithAuthResult: function(authResult, redirectUrl) {
-                    return false;
-                }
-            }
-        };
-
-        // ========== СЛУШАЕМ АВТОРИЗАЦИЮ ==========
-        auth.onAuthStateChanged(async (user) => {
-            currentUser = user;
-            
-            if (user) {
-                // Скрываем форму входа, показываем инфо
-                document.getElementById('firebaseui-auth-container').style.display = 'none';
-                document.getElementById('userInfo').classList.remove('d-none');
-                document.getElementById('userEmail').innerText = user.email;
-                
-                // Загружаем роль пользователя
-                try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        currentUserRole = userDoc.data().role;
-                        document.getElementById('userRole').innerText = currentUserRole === 'master' ? 'Мастер' : 'Клиент';
-                    }
-                } catch (error) {
-                    console.error('Ошибка загрузки роли:', error);
-                }
-                
-                loadOrders();
-                loadOrdersMap();
-            } else {
-                // Показываем форму входа
-                document.getElementById('firebaseui-auth-container').style.display = 'block';
-                document.getElementById('userInfo').classList.add('d-none');
-                ui.start('#firebaseui-auth-container', uiConfig);
-                currentUserRole = null;
-                loadOrders();
-            }
-        });
-
-        // ========== ВЫХОД ==========
-        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
 
         // ========== ЯНДЕКС.КАРТЫ ==========
         ymaps.ready(initMaps);
@@ -302,170 +302,112 @@
                         center: [55.7558, 37.6173],
                         zoom: 10
                     });
+                    loadOrdersMap();
                 }
             } catch (error) {
-                console.error('Ошибка инициализации карт:', error);
+                console.error('Ошибка карт:', error);
             }
         }
 
-        // ========== ТВОЯ ФУНКЦИЯ ЗАГРУЗКИ ЗАЯВОК ==========
-        async function loadOrders() {
-            const ordersList = document.getElementById('ordersList');
+        // ========== АВТОРИЗАЦИЯ (ТВОЯ РАБОЧАЯ) ==========
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
             
-            try {
-                let query;
-                
-                if (currentUserRole === 'master') {
-                    query = db.collection('orders')
-                        .where('status', '==', 'open')
-                        .orderBy('createdAt', 'desc')
-                        .limit(10);
-                } else {
-                    if (currentUser) {
-                        query = db.collection('orders')
-                            .where('clientId', '==', currentUser.uid)
-                            .orderBy('createdAt', 'desc')
-                            .limit(10);
-                    } else {
-                        ordersList.innerHTML = '<div class="text-center p-5 text-secondary">🔒 Войдите, чтобы увидеть заказы</div>';
-                        return;
+            if (user) {
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        currentUserRole = userDoc.data().role;
+                        
+                        // Показываем инфо о пользователе
+                        document.getElementById('authBlock').classList.add('d-none');
+                        document.getElementById('userInfoBlock').classList.remove('d-none');
+                        document.getElementById('userEmailDisplay').innerText = user.email;
+                        document.getElementById('userRoleDisplay').innerText = currentUserRole === 'master' ? 'Мастер' : 'Клиент';
                     }
+                } catch (error) {
+                    console.error('Ошибка:', error);
                 }
-                
-                const snapshot = await query.get();
-
-                if (snapshot.empty) {
-                    if (currentUserRole === 'master') {
-                        ordersList.innerHTML = '<div class="text-center p-5 text-secondary">🔧 Пока нет открытых заказов</div>';
-                    } else {
-                        ordersList.innerHTML = '<div class="text-center p-5 text-secondary">📭 У вас пока нет заказов</div>';
-                    }
-                    return;
-                }
-
-                ordersList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const order = { id: doc.id, ...doc.data() };
-                    ordersList.appendChild(createOrderCard(order));
-                });
-                
-            } catch (error) {
-                console.error('Ошибка загрузки заявок:', error);
-                ordersList.innerHTML = '<div class="text-center p-5 text-danger">❌ Ошибка загрузки</div>';
+            } else {
+                document.getElementById('authBlock').classList.remove('d-none');
+                document.getElementById('userInfoBlock').classList.add('d-none');
+                currentUserRole = null;
             }
-        }
-
-        // ========== ТВОЯ ФУНКЦИЯ СОЗДАНИЯ КАРТОЧКИ ==========
-        function createOrderCard(order) {
-            const div = document.createElement('div');
-            div.className = 'bg-light rounded-4 p-4 mb-3 order-item';
             
-            let html = `
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">${order.title || 'Заказ'}</h5>
-                    <span class="fw-bold" style="color: #E67A4B;">${order.price || 0} ₽</span>
-                </div>
-                <p class="text-secondary mb-3">${order.description || 'Нет описания'}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="bg-white px-3 py-2 rounded-pill small">${order.category || 'Без категории'}</span>
-                    <small class="text-secondary"><i class="fas fa-map-marker-alt me-1"></i> ${order.address || 'Адрес не указан'}</small>
-                </div>
-            `;
+            loadOrders();
+        });
 
-            if (currentUserRole === 'master' && order.status === 'open') {
-                html += `
-                    <button class="btn btn-outline-secondary w-100 mt-3 rounded-pill" onclick="respondToOrder('${order.id}')">
-                        <i class="fas fa-reply me-2"></i>Откликнуться
-                    </button>
-                `;
-            }
+        // ========== ВКЛАДКИ ==========
+        document.getElementById('tabLogin').addEventListener('click', function() {
+            document.getElementById('tabLogin').classList.add('active');
+            document.getElementById('tabRegister').classList.remove('active');
+            document.getElementById('tabLogin').style.background = '#E67A4B';
+            document.getElementById('tabLogin').style.color = 'white';
+            document.getElementById('tabRegister').style.background = 'transparent';
+            document.getElementById('tabRegister').style.color = '#6c757d';
+            document.getElementById('loginForm').classList.remove('d-none');
+            document.getElementById('registerForm').classList.add('d-none');
+        });
+        
+        document.getElementById('tabRegister').addEventListener('click', function() {
+            document.getElementById('tabRegister').classList.add('active');
+            document.getElementById('tabLogin').classList.remove('active');
+            document.getElementById('tabRegister').style.background = '#E67A4B';
+            document.getElementById('tabRegister').style.color = 'white';
+            document.getElementById('tabLogin').style.background = 'transparent';
+            document.getElementById('tabLogin').style.color = '#6c757d';
+            document.getElementById('registerForm').classList.remove('d-none');
+            document.getElementById('loginForm').classList.add('d-none');
+        });
 
-            div.innerHTML = html;
-            return div;
-        }
+        // ========== РЕГИСТРАЦИЯ ==========
+        document.getElementById('registerBtn').addEventListener('click', async () => {
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
 
-        // ========== ТВОЯ ФУНКЦИЯ ОТКЛИКА ==========
-        window.respondToOrder = async function(orderId) {
-            if (!currentUser || currentUserRole !== 'master') {
-                alert('Эта функция доступна только мастерам.');
-                return;
-            }
-
-            const price = prompt('Ваша цена за работу (₽):', '');
-            if (!price) return;
-            const comment = prompt('Краткий комментарий к предложению:', '');
-            
             try {
-                const userDoc = await db.collection('users').doc(currentUser.uid).get();
-                if (!userDoc.exists) {
-                    alert('Ошибка: данные мастера не найдены');
-                    return;
-                }
-                
-                const masterData = userDoc.data();
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
 
-                const response = {
-                    masterId: currentUser.uid,
-                    masterName: masterData.name || 'Мастер',
-                    masterPhone: masterData.phone || '',
-                    masterRating: masterData.rating || 0,
-                    masterReviews: masterData.reviews || 0,
-                    price: parseInt(price),
-                    comment: comment || '',
-                };
-
-                const orderRef = db.collection('orders').doc(orderId);
-                
-                await orderRef.update({
-                    responses: firebase.firestore.FieldValue.arrayUnion(response)
+                await db.collection('users').doc(user.uid).set({
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    role: role,
+                    rating: 0,
+                    reviews: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
-                alert('✅ Ваш отклик отправлен!');
-                loadOrders();
-            } catch (error) {
-                console.error('Ошибка при отклике:', error);
-                alert('❌ Ошибка: ' + error.message);
-            }
-        };
 
-        // ========== ТВОЯ ФУНКЦИЯ ЗАГРУЗКИ КАРТЫ ==========
-        async function loadOrdersMap() {
-            if (!ymapsReady || !ordersMap) return;
-            
+                alert('✅ Регистрация прошла успешно!');
+            } catch (error) {
+                document.getElementById('registerError').innerText = error.message;
+                document.getElementById('registerError').classList.remove('d-none');
+            }
+        });
+
+        // ========== ВХОД ==========
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
             try {
-                ordersMap.geoObjects.removeAll();
-                
-                const snapshot = await db.collection('orders')
-                    .where('status', '==', 'open')
-                    .limit(50)
-                    .get();
-
-                snapshot.forEach(doc => {
-                    const order = doc.data();
-                    if (order.latitude && order.longitude) {
-                        const placemark = new ymaps.Placemark(
-                            [order.latitude, order.longitude],
-                            {
-                                balloonContent: `
-                                    <strong>${order.title || 'Заказ'}</strong><br>
-                                    ${order.price || 0} ₽<br>
-                                    ${order.address || ''}
-                                `
-                            },
-                            {
-                                preset: 'islands#icon',
-                                iconColor: '#E67A4B'
-                            }
-                        );
-                        ordersMap.geoObjects.add(placemark);
-                    }
-                });
+                await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-                console.error('Ошибка загрузки карты:', error);
+                document.getElementById('loginError').innerText = error.message;
+                document.getElementById('loginError').classList.remove('d-none');
             }
-        }
+        });
 
-        // ========== ТВОЯ ФУНКЦИЯ СОЗДАНИЯ ЗАЯВКИ ==========
+        // ========== ВЫХОД ==========
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // ========== СОЗДАНИЕ ЗАЯВКИ ==========
         document.getElementById('orderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -512,9 +454,164 @@
                 
             } catch (error) {
                 console.error('Ошибка:', error);
-                alert('Ошибка при создании заявки');
+                alert('❌ Ошибка при создании заявки: ' + error.message);
             }
         });
+
+        // ========== ЗАГРУЗКА ЗАКАЗОВ ==========
+        async function loadOrders() {
+            const ordersList = document.getElementById('ordersList');
+            
+            try {
+                if (!currentUser) {
+                    ordersList.innerHTML = '<div class="text-center p-5 text-secondary">🔒 Войдите, чтобы увидеть заказы</div>';
+                    return;
+                }
+
+                let query;
+                
+                if (currentUserRole === 'master') {
+                    query = db.collection('orders')
+                        .where('status', '==', 'open')
+                        .limit(10);
+                } else {
+                    query = db.collection('orders')
+                        .where('clientId', '==', currentUser.uid)
+                        .limit(10);
+                }
+                
+                const snapshot = await query.get();
+
+                if (snapshot.empty) {
+                    if (currentUserRole === 'master') {
+                        ordersList.innerHTML = '<div class="text-center p-5 text-secondary">🔧 Пока нет открытых заказов</div>';
+                    } else {
+                        ordersList.innerHTML = '<div class="text-center p-5 text-secondary">📭 У вас пока нет заказов</div>';
+                    }
+                    return;
+                }
+
+                ordersList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const order = { id: doc.id, ...doc.data() };
+                    ordersList.appendChild(createOrderCard(order));
+                });
+                
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                ordersList.innerHTML = '<div class="text-center p-5 text-danger">❌ Ошибка загрузки</div>';
+            }
+        }
+
+        // ========== СОЗДАНИЕ КАРТОЧКИ ==========
+        function createOrderCard(order) {
+            const div = document.createElement('div');
+            div.className = 'bg-light rounded-4 p-4 mb-3 order-item';
+            
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">${order.title || 'Заказ'}</h5>
+                    <span class="fw-bold" style="color: #E67A4B;">${order.price || 0} ₽</span>
+                </div>
+                <p class="text-secondary mb-3">${order.description || 'Нет описания'}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-white text-dark border px-3 py-2">${order.category || 'Без категории'}</span>
+                    <small class="text-secondary"><i class="fas fa-map-marker-alt me-1"></i>${order.address || 'Адрес не указан'}</small>
+                </div>
+            `;
+
+            if (currentUserRole === 'master' && order.status === 'open') {
+                html += `
+                    <button class="btn btn-outline-secondary w-100 mt-3 rounded-pill" onclick="respondToOrder('${order.id}')">
+                        <i class="fas fa-reply me-2"></i>Откликнуться
+                    </button>
+                `;
+            }
+
+            div.innerHTML = html;
+            return div;
+        }
+
+        // ========== ОТКЛИК ==========
+        window.respondToOrder = async function(orderId) {
+            if (!currentUser || currentUserRole !== 'master') {
+                alert('Эта функция доступна только мастерам.');
+                return;
+            }
+
+            const price = prompt('Ваша цена за работу (₽):', '');
+            if (!price) return;
+            const comment = prompt('Краткий комментарий к предложению:', '');
+            
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (!userDoc.exists) {
+                    alert('Ошибка: данные мастера не найдены');
+                    return;
+                }
+                
+                const masterData = userDoc.data();
+
+                const response = {
+                    masterId: currentUser.uid,
+                    masterName: masterData.name || 'Мастер',
+                    masterPhone: masterData.phone || '',
+                    masterRating: masterData.rating || 0,
+                    masterReviews: masterData.reviews || 0,
+                    price: parseInt(price),
+                    comment: comment || '',
+                };
+
+                const orderRef = db.collection('orders').doc(orderId);
+                
+                await orderRef.update({
+                    responses: firebase.firestore.FieldValue.arrayUnion(response)
+                });
+                
+                alert('✅ Ваш отклик отправлен!');
+                loadOrders();
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('❌ Ошибка: ' + error.message);
+            }
+        };
+
+        // ========== КАРТА ЗАЯВОК ==========
+        async function loadOrdersMap() {
+            if (!ymapsReady || !ordersMap) return;
+            
+            try {
+                ordersMap.geoObjects.removeAll();
+                
+                const snapshot = await db.collection('orders')
+                    .where('status', '==', 'open')
+                    .limit(50)
+                    .get();
+
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    if (order.latitude && order.longitude) {
+                        const placemark = new ymaps.Placemark(
+                            [order.latitude, order.longitude],
+                            {
+                                balloonContent: `
+                                    <strong>${order.title || 'Заказ'}</strong><br>
+                                    ${order.price || 0} ₽<br>
+                                    ${order.address || ''}
+                                `
+                            },
+                            {
+                                preset: 'islands#icon',
+                                iconColor: '#E67A4B'
+                            }
+                        );
+                        ordersMap.geoObjects.add(placemark);
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка карты:', error);
+            }
+        }
 
         // ========== КНОПКА ОБНОВЛЕНИЯ ==========
         document.getElementById('refreshBtn').addEventListener('click', () => {
@@ -522,7 +619,7 @@
             loadOrdersMap();
         });
 
-        // ========== МОДАЛКА ОПЛАТЫ ==========
+        // ========== ОПЛАТА ==========
         window.showPaymentModal = function(orderId, masterId, amount) {
             document.getElementById('paymentDetails').innerHTML = `
                 <p>Заказ: #${orderId.slice(-5)}</p>
@@ -539,14 +636,19 @@
             };
         };
 
-        // ========== PWA УСТАНОВКА ==========
+        document.getElementById('closePayment').addEventListener('click', () => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
+            if (modal) modal.hide();
+        });
+
+        // ========== PWA ==========
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
         });
 
-        // ========== ЗАГРУЗКА ПРИ СТАРТЕ ==========
+        // ========== СТАРТ ==========
         loadOrders();
     </script>
 </body>
