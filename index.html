@@ -37,6 +37,19 @@
             height: 400px;
             border-radius: 16px;
         }
+        /* Скелетоны */
+        .skeleton-item {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            height: 100px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -54,14 +67,14 @@
             </nav>
         </header>
 
-        <!-- ТВОЯ РАБОЧАЯ АВТОРИЗАЦИЯ (КОТОРАЯ БЫЛА ИЗНАЧАЛЬНО) -->
+        <!-- АВТОРИЗАЦИЯ -->
         <div id="authBlock" class="bg-white rounded-4 p-4 mb-4 shadow-sm">
             <div class="d-flex gap-3 mb-4">
                 <button id="tabLogin" class="btn px-4 py-2 rounded-pill active" style="background: #E67A4B; color: white;">Вход</button>
                 <button id="tabRegister" class="btn btn-outline-secondary px-4 py-2 rounded-pill">Регистрация</button>
             </div>
             
-            <!-- ФОРМА ВХОДА -->
+            <!-- ВХОД -->
             <div id="loginForm">
                 <div class="mb-3">
                     <label class="form-label text-secondary">Email</label>
@@ -75,7 +88,7 @@
                 <p id="loginError" class="text-danger mt-3 d-none"></p>
             </div>
             
-            <!-- ФОРМА РЕГИСТРАЦИИ -->
+            <!-- РЕГИСТРАЦИЯ -->
             <div id="registerForm" class="d-none">
                 <div class="mb-3">
                     <label class="form-label text-secondary">Имя</label>
@@ -205,7 +218,11 @@
                         <i class="fas fa-list" style="color: #E67A4B;"></i>
                         Свежие заявки
                     </h3>
-                    <div id="ordersList"></div>
+                    <div id="ordersList">
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                    </div>
                     <button id="refreshBtn" class="btn btn-outline-secondary w-100 mt-3 rounded-pill">
                         <i class="fas fa-sync-alt me-2"></i>Обновить список
                     </button>
@@ -309,7 +326,7 @@
             }
         }
 
-        // ========== АВТОРИЗАЦИЯ (ТВОЯ РАБОЧАЯ) ==========
+        // ========== АВТОРИЗАЦИЯ ==========
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
@@ -319,7 +336,6 @@
                     if (userDoc.exists) {
                         currentUserRole = userDoc.data().role;
                         
-                        // Показываем инфо о пользователе
                         document.getElementById('authBlock').classList.add('d-none');
                         document.getElementById('userInfoBlock').classList.remove('d-none');
                         document.getElementById('userEmailDisplay').innerText = user.email;
@@ -440,6 +456,7 @@
                 document.getElementById('orderForm').reset();
                 document.getElementById('latitude').value = '';
                 document.getElementById('longitude').value = '';
+                localStorage.removeItem('orderDraft');
                 
                 if (map) {
                     map.geoObjects.removeAll();
@@ -648,8 +665,316 @@
             deferredPrompt = e;
         });
 
+        // ========== УМНЫЙ АДРЕС ==========
+        setTimeout(() => {
+            if (typeof ymaps !== 'undefined' && ymaps) {
+                const addressInput = document.getElementById('address');
+                if (addressInput) {
+                    const suggestView = new ymaps.SuggestView('address', { results: 7 });
+                    
+                    suggestView.events.add('select', async function(e) {
+                        const item = e.get('item');
+                        addressInput.value = item.value;
+                        
+                        try {
+                            const result = await ymaps.geocode(item.value);
+                            const coords = result.geoObjects.get(0).geometry.getCoordinates();
+                            
+                            document.getElementById('latitude').value = coords[0].toFixed(6);
+                            document.getElementById('longitude').value = coords[1].toFixed(6);
+                            
+                            if (map) {
+                                map.setCenter(coords, 16);
+                                map.geoObjects.removeAll();
+                                map.geoObjects.add(new ymaps.Placemark(coords));
+                            }
+                        } catch (error) {
+                            console.log('Геокодинг не сработал');
+                        }
+                    });
+                }
+            }
+        }, 2000);
+
+        // ========== ЧЕРНОВИК ЗАЯВКИ ==========
+        (function() {
+            function saveDraft() {
+                const draft = {
+                    category: document.getElementById('category')?.value || '',
+                    title: document.getElementById('title')?.value || '',
+                    description: document.getElementById('description')?.value || '',
+                    price: document.getElementById('price')?.value || '3000',
+                    address: document.getElementById('address')?.value || '',
+                    latitude: document.getElementById('latitude')?.value || '',
+                    longitude: document.getElementById('longitude')?.value || '',
+                    clientName: document.getElementById('clientName')?.value || '',
+                    phone: document.getElementById('phone')?.value || '',
+                    timestamp: Date.now()
+                };
+                
+                if (draft.title || draft.description || draft.price !== '3000') {
+                    localStorage.setItem('orderDraft', JSON.stringify(draft));
+                }
+            }
+            
+            function loadDraft() {
+                const saved = localStorage.getItem('orderDraft');
+                if (!saved) return;
+                
+                const draft = JSON.parse(saved);
+                if (Date.now() - draft.timestamp > 24 * 60 * 60 * 1000) {
+                    localStorage.removeItem('orderDraft');
+                    return;
+                }
+                
+                document.getElementById('category').value = draft.category || '';
+                document.getElementById('title').value = draft.title || '';
+                document.getElementById('description').value = draft.description || '';
+                document.getElementById('price').value = draft.price || '3000';
+                document.getElementById('address').value = draft.address || '';
+                document.getElementById('latitude').value = draft.latitude || '';
+                document.getElementById('longitude').value = draft.longitude || '';
+                document.getElementById('clientName').value = draft.clientName || '';
+                document.getElementById('phone').value = draft.phone || '';
+                
+                if (draft.latitude && draft.longitude && map) {
+                    const coords = [parseFloat(draft.latitude), parseFloat(draft.longitude)];
+                    map.setCenter(coords, 16);
+                    map.geoObjects.removeAll();
+                    map.geoObjects.add(new ymaps.Placemark(coords));
+                }
+            }
+            
+            setTimeout(() => {
+                document.querySelectorAll('#orderForm input, #orderForm select, #orderForm textarea').forEach(field => {
+                    field.addEventListener('input', saveDraft);
+                });
+                loadDraft();
+            }, 1000);
+        })();
+
+        // ========== УВЕДОМЛЕНИЯ ==========
+        (function() {
+            if (!('Notification' in window)) return;
+            
+            async function requestPermission() {
+                if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+                await Notification.requestPermission();
+            }
+            
+            const checkRole = setInterval(() => {
+                if (typeof currentUserRole !== 'undefined') {
+                    if (currentUserRole === 'master') requestPermission();
+                    clearInterval(checkRole);
+                }
+            }, 500);
+        })();
+
         // ========== СТАРТ ==========
         loadOrders();
     </script>
+    <!-- ===== ИИ-ПОДСКАЗЧИК ЦЕНЫ ===== -->
+<script>
+(function() {
+    // База цен
+    const priceAI = {
+        prices: {
+            'Сантехника': { min: 1500, max: 8000, avg: 3000 },
+            'Электрика': { min: 1000, max: 6000, avg: 2500 },
+            'Отделочные работы': { min: 3000, max: 20000, avg: 8000 },
+            'Мебель': { min: 800, max: 5000, avg: 2000 },
+            'Окна и двери': { min: 2000, max: 10000, avg: 4500 },
+            'Бытовой ремонт': { min: 500, max: 4000, avg: 1500 },
+            'Клининг': { min: 1000, max: 5000, avg: 2000 },
+            'Ремонт техники': { min: 800, max: 6000, avg: 2000 }
+        },
+        
+        boost: {
+            'срочно': 1.3, 'сегодня': 1.2, 'ночью': 1.5, 'потолок': 1.4,
+            'сложный': 1.4, 'дорогой': 1.3, 'гарантия': 1.2, 'высота': 1.3
+        },
+
+        calc(cat, desc) {
+            if (!cat || !desc || desc.length < 10) return null;
+            const base = this.prices[cat];
+            if (!base) return 2000;
+            
+            let price = base.avg;
+            const text = desc.toLowerCase();
+            
+            // Буст по ключевым словам
+            Object.entries(this.boost).forEach(([word, mult]) => {
+                if (text.includes(word)) price *= mult;
+            });
+            
+            // Цифры в тексте
+            const nums = text.match(/\d+/g);
+            if (nums) {
+                nums.forEach(n => {
+                    const num = parseInt(n);
+                    if (num > 0 && num < 1000) price += num * 50;
+                });
+            }
+            
+            return Math.min(Math.max(Math.round(price), base.min), base.max);
+        }
+    };
+
+    // Создаем подсказку
+    const hint = document.createElement('div');
+    hint.id = 'aiPriceHint';
+    hint.style.cssText = 'background: #E67A4B15; border: 1px solid #E67A4B; border-radius: 40px; padding: 12px 20px; margin-top: 10px; font-size: 14px; color: #E67A4B; cursor: pointer; display: none; align-items: center; gap: 10px;';
+    hint.innerHTML = '<i class="fas fa-robot"></i> <span>🤖 ИИ предлагает цену: <strong id="aiPriceValue">0 ₽</strong> (нажми чтобы применить)</span>';
+    document.getElementById('price').parentNode.appendChild(hint);
+
+    // Обновление подсказки
+    function updateAI() {
+        const cat = document.getElementById('category')?.value;
+        const desc = document.getElementById('description')?.value;
+        const price = priceAI.calc(cat, desc);
+        
+        if (price) {
+            document.getElementById('aiPriceValue').innerText = price + ' ₽';
+            hint.style.display = 'flex';
+        } else {
+            hint.style.display = 'none';
+        }
+    }
+
+    // Применение цены
+    hint.onclick = function() {
+        const price = document.getElementById('aiPriceValue').innerText.replace(' ₽', '');
+        document.getElementById('price').value = price;
+        hint.style.display = 'none';
+    };
+
+    // Слушатели
+    setTimeout(() => {
+        document.getElementById('category')?.addEventListener('change', updateAI);
+        document.getElementById('description')?.addEventListener('input', updateAI);
+    }, 1000);
+})();
+</script>
+<!-- ===== КОНЕЦ АВТО-ЦЕНЫ ===== -->
+ <!-- ===== УМНЫЕ УВЕДОМЛЕНИЯ ===== -->
+<script>
+(function() {
+    // Уведомления о заказе без откликов
+    async function checkDeadOrders() {
+        if (!window.currentUser) return;
+        
+        const snapshot = await window.db.collection('orders')
+            .where('clientId', '==', window.currentUser.uid)
+            .where('status', '==', 'open')
+            .get();
+            
+        snapshot.forEach(doc => {
+            const order = doc.data();
+            const created = order.createdAt?.toDate().getTime() || 0;
+            
+            // Если заказ висит больше 2 часов без откликов
+            if (Date.now() - created > 2 * 60 * 60 * 1000 && 
+                (!order.responses || order.responses.length === 0)) {
+                
+                // Показываем уведомление
+                const notify = document.createElement('div');
+                notify.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: white; border-left: 4px solid #E67A4B; padding: 16px 24px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); z-index: 10000; max-width: 350px; animation: slideIn 0.3s;';
+                notify.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fas fa-exclamation-circle" style="color: #E67A4B; font-size: 24px;"></i>
+                        <div>
+                            <strong>⚠️ Нет откликов</strong>
+                            <p style="margin: 4px 0 0; font-size: 13px; color: #5A6B7A;">На заказ "${order.title}" пока никто не откликнулся</p>
+                            <button onclick="increasePrice('${doc.id}', ${order.price})" style="background: #E67A4B; color: white; border: none; padding: 8px 16px; border-radius: 40px; margin-top: 10px; cursor: pointer;">
+                                Поднять цену на 20%
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(notify);
+                
+                setTimeout(() => notify.remove(), 10000);
+            }
+        });
+    }
+
+    // Функция поднятия цены
+    window.increasePrice = async function(orderId, oldPrice) {
+        const newPrice = Math.round(oldPrice * 1.2);
+        await window.db.collection('orders').doc(orderId).update({
+            price: newPrice
+        });
+        alert('✅ Цена повышена!');
+        location.reload();
+    };
+
+    // Проверяем раз в 5 минут
+    setInterval(checkDeadOrders, 5 * 60 * 1000);
+})();
+</script>
+<!-- ===== КОНЕЦ УВЕДОМЛЕНИЙ ===== -->
+ <!-- ===== АНАЛИЗ ФОТО ===== -->
+<script>
+(function() {
+    // Создаем поле для фото если его нет
+    const form = document.getElementById('orderForm');
+    if (form && !document.getElementById('photoInput')) {
+        const photoDiv = document.createElement('div');
+        photoDiv.className = 'mb-3';
+        photoDiv.innerHTML = `
+            <label class="form-label text-secondary">Фото (для анализа)</label>
+            <input type="file" id="photoInput" accept="image/*" class="form-control rounded-pill">
+            <div id="photoAnalysis" style="margin-top: 8px; font-size: 13px;"></div>
+        `;
+        
+        // Вставляем перед кнопкой отправки
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            form.insertBefore(photoDiv, submitBtn.parentNode);
+        }
+    }
+
+    // Анализ фото
+    document.getElementById('photoInput')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const analysis = document.getElementById('photoAnalysis');
+        const fileName = file.name.toLowerCase();
+        const fileSize = file.size;
+        
+        let hints = [];
+        
+        // По названию
+        if (fileName.includes('sink') || fileName.includes('раковин') || fileName.includes('кран')) {
+            hints.push('🚰 Возможно сантехника');
+        }
+        if (fileName.includes('light') || fileName.includes('свет') || fileName.includes('розетк')) {
+            hints.push('💡 Возможно электрика');
+        }
+        if (fileName.includes('door') || fileName.includes('двер')) {
+            hints.push('🚪 Возможно двери');
+        }
+        if (fileName.includes('window') || fileName.includes('окн')) {
+            hints.push('🪟 Возможно окна');
+        }
+        if (fileName.includes('wall') || fileName.includes('стен') || fileName.includes('обои')) {
+            hints.push('🧱 Возможно отделка');
+        }
+        
+        // По размеру
+        if (fileSize > 5 * 1024 * 1024) {
+            hints.push('📸 Крупное фото — много деталей');
+        }
+        
+        if (hints.length > 0) {
+            analysis.innerHTML = '<i class="fas fa-robot" style="color: #E67A4B;"></i> ' + hints.join(' · ');
+        } else {
+            analysis.innerHTML = '';
+        }
+    });
+})();
+</script>
+<!-- ===== КОНЕЦ АНАЛИЗА ФОТО ===== -->
 </body>
 </html>
