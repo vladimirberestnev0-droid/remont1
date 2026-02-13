@@ -5,471 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВоркХом — Мои заказы</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     
     <style>
-        :root {
-            --primary: #1E2B3C;
-            --accent: #E67A4B;
-            --bg-light: #F9F7F5;
-            --text-dark: #2D3A4A;
-            --text-soft: #5A6B7A;
-            --white: #FFFFFF;
-            --border: #E2E8F0;
-            --success: #00A86B;
-            --warning: #FFB020;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background: var(--bg-light);
-            color: var(--text-dark);
-            padding: 20px;
-            animation: fadeSlide 0.6s ease-out;
-        }
-
-        @keyframes fadeSlide {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-        }
-
-        header {
-            background: var(--white);
-            border-radius: 24px;
-            padding: 24px 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-            margin-bottom: 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .brand {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo i {
-            font-size: 32px;
-            color: var(--accent);
-        }
-
-        .logo span {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: -0.5px;
-        }
-
-        .slogan {
-            font-family: 'Georgia', serif;
-            font-style: italic;
-            font-size: 14px;
-            color: var(--text-soft);
-            margin-top: 4px;
-            margin-left: 44px;
-        }
-
-        nav a {
-            margin-left: 24px;
-            text-decoration: none;
-            color: var(--text-soft);
-            font-weight: 500;
-            transition: 0.2s;
-        }
-
-        nav a:hover {
-            color: var(--accent);
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 3fr;
-            gap: 30px;
-        }
-
-        .profile-card {
-            background: var(--white);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.02);
-            height: fit-content;
-        }
-
-        .avatar {
-            width: 100px;
-            height: 100px;
-            background: var(--bg-light);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            border: 3px solid var(--accent);
-        }
-
-        .avatar i {
-            font-size: 48px;
-            color: var(--accent);
-        }
-
-        .profile-name {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--primary);
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .profile-role {
-            text-align: center;
-            color: var(--accent);
-            font-weight: 600;
-            margin-bottom: 24px;
-            background: var(--bg-light);
-            padding: 8px;
-            border-radius: 40px;
-        }
-
-        .profile-info {
-            margin-top: 24px;
-        }
-
-        .info-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .info-row i {
-            width: 20px;
-            color: var(--accent);
-        }
-
-        .orders-card {
-            background: var(--white);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.02);
-        }
-
-        .filter-tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .filter-tab {
-            padding: 8px 20px;
-            border-radius: 40px;
-            background: var(--bg-light);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-
-        .filter-tab.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
+        body { background: #F9F7F5; }
         .order-item {
-            background: var(--bg-light);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 20px;
-            border-left: 6px solid var(--accent);
+            border-left: 6px solid #E67A4B;
             transition: 0.2s;
         }
-
         .order-item:hover {
-            background: var(--white);
+            background: white !important;
+            transform: translateY(-2px);
             box-shadow: 0 12px 28px rgba(0,0,0,0.02);
         }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .order-title {
-            font-weight: 700;
-            color: var(--primary);
-            font-size: 18px;
-        }
-
-        .order-price {
-            color: var(--accent);
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        .order-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 12px;
-        }
-
-        .status-open { background: #FFE8E0; color: var(--accent); }
+        .status-open { background: #FFE8E0; color: #E67A4B; }
         .status-progress { background: #E3F2FD; color: #0984e3; }
-        .status-completed { background: #E3F2E9; color: var(--success); }
-
-        .order-desc {
-            color: var(--text-soft);
-            margin-bottom: 16px;
-        }
-
-        .order-photos {
-            display: flex;
-            gap: 12px;
-            margin: 16px 0;
-            flex-wrap: wrap;
-        }
-
-        .order-photo {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            object-fit: cover;
-            cursor: pointer;
-            border: 2px solid var(--white);
-        }
-
-        .order-category {
-            display: inline-block;
-            background: white;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 13px;
-            color: var(--text-soft);
-            border: 1px solid var(--border);
-        }
-
-        .responses {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-        }
-
-        .response-item {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .master-rating {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--bg-light);
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 13px;
-            margin-left: 12px;
-        }
-
-        .star {
-            color: #FFD700;
-            font-size: 14px;
-        }
-
-        .rating-select {
-            display: flex;
-            gap: 8px;
-            margin: 12px 0;
-        }
-
+        .status-completed { background: #E3F2E9; color: #00A86B; }
         .rating-star {
             font-size: 24px;
-            color: var(--border);
+            color: #ddd;
             cursor: pointer;
-            transition: 0.2s;
         }
-
-        .rating-star:hover,
-        .rating-star.active {
-            color: #FFD700;
-        }
-
-        .btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            background: #D45C2F;
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-success {
-            background: var(--success);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-soft);
-        }
-
-        .empty-state i {
-            font-size: 48px;
-            color: var(--border);
-            margin-bottom: 16px;
-        }
-
-        @media (max-width: 900px) {
-            .dashboard { grid-template-columns: 1fr; }
-            header { flex-direction: column; text-align: center; }
-            nav a { margin: 0 12px; }
-            .slogan { margin-left: 0; }
-        }
+        .rating-star.active { color: #FFD700; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <div class="brand">
-                <div class="logo">
-                    <i class="fas fa-house"></i>
-                    <span>ВоркХом</span>
-                </div>
-                <div class="slogan">С нами проще. Вы хотите — мы делаем.</div>
+<body class="bg-light">
+    <div class="container py-4">
+        <!-- ШАПКА -->
+        <header class="bg-white rounded-4 p-4 mb-4 d-flex justify-content-between align-items-center shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fas fa-house fs-1" style="color: #E67A4B;"></i>
+                <span class="fs-2 fw-bold" style="color: #1E2B3C;">ВоркХом</span>
             </div>
-            <nav>
-                <a href="index.html">Главная</a>
-                <a href="client.html" style="color: var(--accent);">Мои заказы</a>
-                <a href="index.html#form">➕ Создать заявку</a>
-                <a href="#" id="logoutLink">Выйти</a>
+            <nav class="d-flex gap-4">
+                <a href="index.html" class="text-decoration-none text-secondary">Главная</a>
+                <a href="client.html" class="text-decoration-none" style="color: #E67A4B;">Мои заказы</a>
+                <a href="index.html" class="text-decoration-none text-secondary">➕ Создать заявку</a>
+                <a href="#" id="logoutLink" class="text-decoration-none text-secondary">Выйти</a>
             </nav>
         </header>
 
-        <div id="authRequired" style="text-align: center; padding: 60px; background: var(--white); border-radius: 24px; margin-bottom: 40px;">
-            <i class="fas fa-user-circle" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
-            <h2 style="margin-bottom: 16px;">Вход в кабинет клиента</h2>
-            <p style="color: var(--text-soft); margin-bottom: 24px;">Пожалуйста, войдите, чтобы увидеть ваши заказы</p>
-            <a href="index.html" class="btn" style="width: auto; padding: 14px 40px;">Перейти на главную и войти</a>
+        <!-- БЛОК АВТОРИЗАЦИИ -->
+        <div id="authRequired" class="bg-white rounded-4 p-5 text-center shadow-sm">
+            <i class="fas fa-user-circle fa-4x mb-3" style="color: #E67A4B;"></i>
+            <h3 class="mb-3">Вход в кабинет клиента</h3>
+            <p class="text-secondary mb-4">Пожалуйста, войдите, чтобы увидеть ваши заказы</p>
+            <a href="index.html" class="btn px-5 py-2 rounded-pill" style="background: #E67A4B; color: white;">Перейти на главную</a>
         </div>
 
-        <div id="clientCabinet" class="hidden">
-            <div class="dashboard">
-                <div class="profile-card">
-                    <div class="avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="profile-name" id="clientName">Загрузка...</div>
-                    <div class="profile-role">👤 Клиент</div>
-                    
-                    <div class="profile-info">
-                        <div class="info-row">
-                            <i class="fas fa-envelope"></i>
-                            <span id="clientEmail">email@example.com</span>
+        <!-- КАБИНЕТ КЛИЕНТА -->
+        <div id="clientCabinet" class="d-none">
+            <div class="row g-4">
+                <!-- ПРОФИЛЬ -->
+                <div class="col-md-4">
+                    <div class="bg-white rounded-4 p-4 shadow-sm">
+                        <div class="text-center">
+                            <div class="avatar mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; background: #F9F7F5; border-radius: 50%; border: 3px solid #E67A4B;">
+                                <i class="fas fa-user fa-3x" style="color: #E67A4B;"></i>
+                            </div>
+                            <h4 id="clientName" class="fw-bold">Загрузка...</h4>
+                            <span class="badge px-4 py-2 rounded-pill mb-3" style="background: #F9F7F5; color: #E67A4B;">👤 Клиент</span>
+                            <p id="clientEmail" class="text-secondary"></p>
+                            <a href="index.html" class="btn w-100 rounded-pill mt-3" style="background: #E67A4B; color: white;">
+                                <i class="fas fa-plus-circle me-2"></i>Новая заявка
+                            </a>
                         </div>
-                        <div class="info-row">
-                            <i class="fas fa-phone"></i>
-                            <span id="clientPhone">+7 (999) 123-45-67</span>
-                        </div>
-                        <div class="info-row">
-                            <i class="fas fa-calendar"></i>
-                            <span id="clientSince">На платформе с 2025</span>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 24px;">
-                        <a href="index.html#form" class="btn" style="width: 100%;">
-                            <i class="fas fa-plus-circle"></i> Новая заявка
-                        </a>
                     </div>
                 </div>
 
-                <div class="orders-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h2 style="margin-bottom: 0;">📋 Мои заказы</h2>
-                        <div class="filter-tabs">
-                            <button class="filter-tab active" data-filter="all">Все</button>
-                            <button class="filter-tab" data-filter="open">Активные</button>
-                            <button class="filter-tab" data-filter="in_progress">В работе</button>
-                            <button class="filter-tab" data-filter="completed">Выполнены</button>
+                <!-- ЗАКАЗЫ -->
+                <div class="col-md-8">
+                    <div class="bg-white rounded-4 p-4 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="mb-0">📋 Мои заказы</h3>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary rounded-pill filter-tab active" data-filter="all">Все</button>
+                                <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="open">Активные</button>
+                                <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="in_progress">В работе</button>
+                                <button class="btn btn-outline-secondary rounded-pill filter-tab" data-filter="completed">Выполнены</button>
+                            </div>
                         </div>
+                        <div id="ordersList"></div>
                     </div>
-                    
-                    <div id="ordersList"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="reviewModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;">
-        <div style="background: white; border-radius: 24px; padding: 32px; max-width: 400px; width: 90%;">
-            <h2 style="margin-bottom: 20px;">⭐ Оцените мастера</h2>
-            <div id="reviewMasterInfo" style="margin-bottom: 20px;"></div>
-            <div class="rating-select" id="ratingStars">
-                <span class="rating-star" data-rating="1">★</span>
-                <span class="rating-star" data-rating="2">★</span>
-                <span class="rating-star" data-rating="3">★</span>
-                <span class="rating-star" data-rating="4">★</span>
-                <span class="rating-star" data-rating="5">★</span>
-            </div>
-            <textarea id="reviewText" placeholder="Напишите отзыв..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; margin: 20px 0; min-height: 100px;"></textarea>
-            <div style="display: flex; gap: 12px;">
-                <button class="btn" id="submitReview" style="flex: 1;">Отправить</button>
-                <button class="btn-outline" id="cancelReview" style="flex: 1;">Отмена</button>
+    <!-- МОДАЛКА ОТЗЫВА -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">⭐ Оцените мастера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="reviewMasterInfo" class="mb-3"></div>
+                    <div class="d-flex gap-2 mb-3 justify-content-center">
+                        <span class="rating-star" data-rating="1">★</span>
+                        <span class="rating-star" data-rating="2">★</span>
+                        <span class="rating-star" data-rating="3">★</span>
+                        <span class="rating-star" data-rating="4">★</span>
+                        <span class="rating-star" data-rating="5">★</span>
+                    </div>
+                    <textarea id="reviewText" class="form-control" rows="4" placeholder="Напишите отзыв..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn" style="background: #E67A4B; color: white;" id="submitReview">Отправить</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -486,16 +144,15 @@
         const auth = firebase.auth();
 
         let currentUser = null;
-        let clientData = null;
         let currentRating = 0;
         let currentOrderId = null;
         let currentMasterId = null;
+        let reviewModal = null;
 
         // ========== ПРИНУДИТЕЛЬНОЕ ЗАКРЫТИЕ МОДАЛКИ ==========
         function forceCloseReviewModal() {
-            const modal = document.getElementById('reviewModal');
-            if (modal) {
-                modal.classList.add('hidden');
+            if (reviewModal) {
+                reviewModal.hide();
             }
             currentRating = 0;
             currentOrderId = null;
@@ -504,78 +161,53 @@
             document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
         }
 
-        // Закрываем при загрузке
-        window.addEventListener('load', forceCloseReviewModal);
-        window.addEventListener('DOMContentLoaded', forceCloseReviewModal);
-
+        // ========== АВТОРИЗАЦИЯ ==========
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             
             if (user) {
                 const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    clientData = userDoc.data();
+                if (userDoc.exists && userDoc.data().role === 'client') {
+                    // ПОКАЗЫВАЕМ КАБИНЕТ КЛИЕНТА
+                    document.getElementById('authRequired').classList.add('d-none');
+                    document.getElementById('clientCabinet').classList.remove('d-none');
                     
-                    if (clientData.role === 'client') {
-                        showClientCabinet();
-                        loadClientData();
-                        loadClientOrders();
-                    } else {
-                        document.getElementById('authRequired').innerHTML = `
-                            <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
-                            <h2 style="margin-bottom: 16px;">Это кабинет клиента</h2>
-                            <p style="color: var(--text-soft); margin-bottom: 24px;">Вы вошли как мастер. Для клиентов есть отдельный кабинет.</p>
-                            <a href="masters.html" class="btn" style="width: auto; padding: 14px 40px;">Перейти в кабинет мастера</a>
-                        `;
-                    }
+                    const userData = userDoc.data();
+                    document.getElementById('clientName').innerText = userData.name || 'Клиент';
+                    document.getElementById('clientEmail').innerText = userData.email || '';
+                    
+                    // ЗАГРУЖАЕМ ЗАКАЗЫ
+                    loadClientOrders('all');
                 }
             } else {
-                document.getElementById('authRequired').style.display = 'block';
-                document.getElementById('clientCabinet').classList.add('hidden');
+                document.getElementById('authRequired').classList.remove('d-none');
+                document.getElementById('clientCabinet').classList.add('d-none');
             }
-            
             forceCloseReviewModal();
         });
 
-        function showClientCabinet() {
-            document.getElementById('authRequired').style.display = 'none';
-            document.getElementById('clientCabinet').classList.remove('hidden');
-            forceCloseReviewModal();
-        }
-
-        async function loadClientData() {
-            if (!clientData) return;
-            
-            document.getElementById('clientName').innerText = clientData.name || 'Клиент';
-            document.getElementById('clientEmail').innerText = clientData.email || '';
-            document.getElementById('clientPhone').innerText = clientData.phone || 'Телефон не указан';
-            
-            if (clientData.createdAt) {
-                const date = clientData.createdAt.toDate();
-                document.getElementById('clientSince').innerHTML = `На платформе с ${date.toLocaleDateString('ru-RU')}`;
-            }
-        }
-
-        async function loadClientOrders(filter = 'all') {
+        // ========== ЗАГРУЗКА ЗАКАЗОВ КЛИЕНТА ==========
+        async function loadClientOrders(filter) {
             if (!currentUser) return;
             
             const ordersList = document.getElementById('ordersList');
-            ordersList.innerHTML = '<div style="text-align: center; padding: 40px;">Загрузка заказов...</div>';
+            ordersList.innerHTML = '<div class="text-center p-5">Загрузка заказов...</div>';
             
             try {
-                let query = db.collection('orders')
-                    .where('clientId', '==', currentUser.uid)
-                    .orderBy('createdAt', 'desc');
-                
-                const snapshot = await query.get();
+                // ✅ ВАЖНО: ИСПРАВЛЕН ЗАПРОС!
+                const snapshot = await db.collection('orders')
+                    .where('clientId', '==', currentUser.uid)  // ТОЛЬКО ЗАКАЗЫ ЭТОГО КЛИЕНТА
+                    .get();
 
                 if (snapshot.empty) {
                     ordersList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-clipboard-list"></i>
-                            <h3 style="margin-bottom: 8px;">У вас пока нет заказов</h3>
-                            <p style="color: var(--text-soft); margin-bottom: 24px;">Создайте первую заявку, и мастера начнут откликаться</p>
-                            <a href="index.html#form" class="btn">Создать заявку</a>
+                        <div class="text-center p-5 text-secondary">
+                            <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                            <h4>У вас пока нет заказов</h4>
+                            <p class="mb-4">Создайте первую заявку, и мастера начнут откликаться</p>
+                            <a href="index.html" class="btn rounded-pill px-5" style="background: #E67A4B; color: white;">
+                                Создать заявку
+                            </a>
                         </div>
                     `;
                     return;
@@ -586,6 +218,7 @@
                     orders.push({ id: doc.id, ...doc.data() });
                 });
 
+                // Фильтрация по статусу
                 if (filter !== 'all') {
                     orders = orders.filter(o => o.status === filter);
                 }
@@ -596,19 +229,19 @@
                 });
                 
             } catch (error) {
-                console.error('Ошибка загрузки заказов:', error);
-                ordersList.innerHTML = '<div style="text-align: center; padding: 40px; color: #E67A4B;">Ошибка загрузки. Обновите страницу.</div>';
+                console.error('❌ Ошибка загрузки заказов:', error);
+                ordersList.innerHTML = `<div class="text-center p-5 text-danger">❌ Ошибка загрузки: ${error.message}</div>`;
             }
-            
-            forceCloseReviewModal();
         }
 
+        // ========== СОЗДАНИЕ КАРТОЧКИ ЗАКАЗА ==========
         function createOrderCard(order) {
             const div = document.createElement('div');
-            div.className = 'order-item';
+            div.className = 'bg-light rounded-4 p-4 mb-3 order-item';
             
             let statusClass = '';
             let statusText = '';
+            
             if (order.status === 'open') {
                 statusClass = 'status-open';
                 statusText = '🔵 Активна';
@@ -620,61 +253,52 @@
                 statusText = '✅ Выполнена';
             }
             
-            let photosHtml = '';
-            if (order.photos && order.photos.length > 0) {
-                photosHtml = '<div class="order-photos">';
-                order.photos.forEach(url => {
-                    photosHtml += `<img src="${url}" class="order-photo" onclick="window.open('${url}')">`;
-                });
-                photosHtml += '</div>';
-            }
-            
             let responsesHtml = '';
             if (order.responses && order.responses.length > 0) {
-                responsesHtml = '<div class="responses"><h4 style="margin-bottom: 16px;">📩 Отклики мастеров</h4>';
+                responsesHtml = '<div class="mt-4"><h6 class="mb-3">📩 Отклики мастеров</h6>';
                 
                 order.responses.forEach(resp => {
-                    // ✅ Защита от битых данных
-                    const hasReview = order.reviews && Array.isArray(order.reviews) && 
-                        order.reviews.some(r => r && r.masterId === resp?.masterId);
-                    const isSelected = order.selectedMasterId === resp?.masterId;
+                    const hasReview = order.reviews?.some(r => r.masterId === resp.masterId);
+                    const isSelected = order.selectedMasterId === resp.masterId;
                     
                     responsesHtml += `
-                        <div class="response-item">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="bg-white rounded-4 p-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div>
-                                    <span style="font-weight: 700;">${resp.masterName || 'Мастер'}</span>
-                                    <span class="master-rating">
-                                        <i class="fas fa-star star"></i> ${(resp.masterRating || 0).toFixed(1)}
-                                        (${resp.masterReviews || 0})
+                                    <span class="fw-bold">${resp.masterName || 'Мастер'}</span>
+                                    <span class="badge bg-light text-dark ms-2">
+                                        ⭐ ${(resp.masterRating || 0).toFixed(1)} (${resp.masterReviews || 0})
                                     </span>
                                 </div>
-                                <span style="color: var(--accent); font-weight: 700;">${resp.price || 0} ₽</span>
+                                <span class="fw-bold" style="color: #E67A4B;">${resp.price || 0} ₽</span>
                             </div>
-                            <p style="margin-top: 12px; color: var(--text-soft);">${resp.comment || ''}</p>
-                            <div style="display: flex; gap: 12px; margin-top: 16px;">
-                                ${resp?.masterId ? `
-                                    <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn-outline" style="padding: 8px 16px;">
-                                        <i class="fas fa-comment"></i> Чат
+                            <p class="text-secondary mb-3">${resp.comment || ''}</p>
+                            <div class="d-flex gap-2">
+                                <button onclick="openChat('${order.id}', '${resp.masterId}')" class="btn btn-outline-secondary rounded-pill">
+                                    <i class="fas fa-comment me-2"></i>Чат
+                                </button>
+                                
+                                ${order.status === 'open' && !isSelected ? `
+                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price})" class="btn rounded-pill" style="background: #E67A4B; color: white;">
+                                        <i class="fas fa-check me-2"></i>Выбрать
                                     </button>
                                 ` : ''}
-                                ${order.status === 'completed' && !hasReview && resp?.masterId ? `
-                                    <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName || 'Мастер'}')" class="btn-outline" style="padding: 8px 16px;">
-                                        <i class="fas fa-star"></i> Оценить
-                                    </button>
-                                ` : order.status === 'completed' && hasReview ? `
-                                    <span style="color: var(--success); padding: 8px 16px;">
-                                        <i class="fas fa-check-circle"></i> Отзыв оставлен
+                                
+                                ${isSelected && order.status === 'in_progress' ? `
+                                    <span class="badge bg-success text-white p-3 rounded-pill">
+                                        <i class="fas fa-check-circle me-2"></i>Мастер выбран
                                     </span>
                                 ` : ''}
-                                ${order.status === 'open' && !isSelected && resp?.masterId ? `
-                                    <button onclick="selectMaster('${order.id}', '${resp.masterId}', ${resp.price || 0})" class="btn" style="padding: 8px 16px;">
-                                        <i class="fas fa-check"></i> Выбрать
+                                
+                                ${order.status === 'completed' && !hasReview ? `
+                                    <button onclick="openReview('${order.id}', '${resp.masterId}', '${resp.masterName || 'Мастер'}')" class="btn btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-star me-2"></i>Оценить
                                     </button>
                                 ` : ''}
-                                ${isSelected && order.status === 'in_progress' ? `
-                                    <span style="color: var(--success); padding: 8px 16px;">
-                                        <i class="fas fa-check-circle"></i> Мастер выбран
+                                
+                                ${order.status === 'completed' && hasReview ? `
+                                    <span class="badge bg-success text-white p-3 rounded-pill">
+                                        <i class="fas fa-check-circle me-2"></i>Отзыв оставлен
                                     </span>
                                 ` : ''}
                             </div>
@@ -684,34 +308,29 @@
                 responsesHtml += '</div>';
             }
             
-            let html = `
-                <div class="order-header">
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                        <span class="order-title">${order.title || 'Заказ'}</span>
-                        <span class="order-status ${statusClass}">${statusText}</span>
+                        <h5 class="fw-bold d-inline">${order.title || 'Заказ'}</h5>
+                        <span class="badge ${statusClass} ms-2 px-3 py-2">${statusText}</span>
                     </div>
-                    <div class="order-price">${order.price || 0} ₽</div>
+                    <span class="fw-bold fs-5" style="color: #E67A4B;">${order.price || 0} ₽</span>
                 </div>
-                <div class="order-desc">${order.description || 'Нет описания'}</div>
-                ${photosHtml}
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                    <span class="order-category">${order.category || 'Без категории'}</span>
-                    <span style="color: var(--text-soft); font-size: 13px;">
-                        <i class="fas fa-map-marker-alt"></i> ${order.address || 'Адрес не указан'}
-                    </span>
+                <p class="text-secondary mb-3">${order.description || ''}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-white text-dark border px-3 py-2">${order.category || 'Без категории'}</span>
+                    <small class="text-secondary">
+                        <i class="fas fa-map-marker-alt me-1"></i>${order.address || 'Адрес не указан'}
+                    </small>
                 </div>
                 ${responsesHtml}
             `;
             
-            div.innerHTML = html;
             return div;
         }
 
+        // ========== ВЫБОР МАСТЕРА ==========
         window.selectMaster = async function(orderId, masterId, price) {
-            if (!masterId) {
-                alert('Ошибка: не указан мастер');
-                return;
-            }
             if (!confirm('Вы уверены, что хотите выбрать этого мастера?')) return;
             
             try {
@@ -721,135 +340,90 @@
                     selectedPrice: price
                 });
                 
-                showNotification('✅ Мастер выбран! Теперь вы можете обсудить детали в чате.');
+                alert('✅ Мастер выбран!');
                 loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
             } catch (error) {
                 console.error('Ошибка:', error);
-                alert('Ошибка при выборе мастера');
+                alert('❌ Ошибка при выборе мастера');
             }
         };
 
+        // ========== ОТКРЫТЬ ЧАТ ==========
         window.openChat = function(orderId, masterId) {
-            if (!masterId) {
-                alert('Ошибка: не указан мастер');
-                return;
-            }
             window.location.href = `chat.html?orderId=${orderId}&masterId=${masterId}`;
         };
 
+        // ========== ОТКРЫТЬ ОТЗЫВ ==========
         window.openReview = function(orderId, masterId, masterName) {
-            if (!masterId) {
-                alert('Ошибка: не указан мастер');
-                return;
-            }
             currentOrderId = orderId;
             currentMasterId = masterId;
-            document.getElementById('reviewMasterInfo').innerHTML = `
-                <p style="font-weight: 700; margin-bottom: 8px;">Мастер: ${masterName}</p>
-            `;
-            document.getElementById('reviewModal').classList.remove('hidden');
+            document.getElementById('reviewMasterInfo').innerHTML = `<p class="fw-bold mb-0">Мастер: ${masterName}</p>`;
+            
+            reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+            reviewModal.show();
         };
 
+        // ========== ЗВЁЗДЫ ==========
         document.querySelectorAll('.rating-star').forEach(star => {
             star.addEventListener('click', function() {
-                const rating = parseInt(this.dataset.rating);
-                currentRating = rating;
-                
-                document.querySelectorAll('.rating-star').forEach(s => {
-                    s.classList.remove('active');
-                });
-                
-                for (let i = 0; i < rating; i++) {
+                currentRating = parseInt(this.dataset.rating);
+                document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('active'));
+                for (let i = 0; i < currentRating; i++) {
                     document.querySelectorAll('.rating-star')[i].classList.add('active');
                 }
             });
         });
 
+        // ========== ОТПРАВКА ОТЗЫВА ==========
         document.getElementById('submitReview').addEventListener('click', async () => {
-            if (currentRating === 0) {
-                alert('Пожалуйста, поставьте оценку');
+            if (!currentRating) {
+                alert('Поставьте оценку!');
                 return;
             }
-            
-            if (!currentMasterId) {
-                alert('Ошибка: не указан мастер');
-                forceCloseReviewModal();
-                return;
-            }
-            
-            const reviewText = document.getElementById('reviewText').value;
             
             try {
                 const review = {
                     masterId: currentMasterId,
                     rating: currentRating,
-                    text: reviewText,
+                    text: document.getElementById('reviewText').value || '',
                     createdAt: new Date().toISOString()
                 };
-                
-                const orderRef = db.collection('orders').doc(currentOrderId);
-                await orderRef.update({
+
+                await db.collection('orders').doc(currentOrderId).update({
                     reviews: firebase.firestore.FieldValue.arrayUnion(review)
                 });
-                
-                const masterRef = db.collection('users').doc(currentMasterId);
-                const masterDoc = await masterRef.get();
+
+                const masterDoc = await db.collection('users').doc(currentMasterId).get();
                 if (masterDoc.exists) {
                     const masterData = masterDoc.data();
+                    const newRating = ((masterData.rating || 0) * (masterData.reviews || 0) + currentRating) / ((masterData.reviews || 0) + 1);
                     
-                    const currentRating_sum = masterData.rating || 0;
-                    const currentReviews_count = masterData.reviews || 0;
-                    
-                    const newRating = ((currentRating_sum * currentReviews_count) + currentRating) / (currentReviews_count + 1);
-                    
-                    await masterRef.update({
+                    await db.collection('users').doc(currentMasterId).update({
                         rating: newRating,
-                        reviews: currentReviews_count + 1
+                        reviews: (masterData.reviews || 0) + 1
                     });
                 }
-                
-                forceCloseReviewModal();
-                alert('✅ Спасибо за отзыв!');
-                await loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
+
+                reviewModal.hide();
+                alert('✅ Отзыв отправлен!');
+                loadClientOrders(document.querySelector('.filter-tab.active').dataset.filter);
                 
             } catch (error) {
-                console.error('Ошибка при отправке отзыва:', error);
-                alert('❌ Ошибка при отправке отзыва: ' + error.message);
+                console.error('Ошибка:', error);
+                alert('❌ Ошибка: ' + error.message);
             }
         });
 
-        document.getElementById('cancelReview').addEventListener('click', forceCloseReviewModal);
-
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: var(--success);
-                color: white;
-                padding: 16px 24px;
-                border-radius: 12px;
-                z-index: 3000;
-                animation: slideIn 0.3s ease;
-            `;
-            notification.innerHTML = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
+        // ========== ФИЛЬТРЫ ==========
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-                const filter = this.dataset.filter;
-                loadClientOrders(filter);
+                loadClientOrders(this.dataset.filter);
             });
         });
 
+        // ========== ВЫХОД ==========
         document.getElementById('logoutLink').addEventListener('click', (e) => {
             e.preventDefault();
             auth.signOut().then(() => {
